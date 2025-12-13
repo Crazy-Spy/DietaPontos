@@ -63,7 +63,7 @@
         .meal-item { padding: 10px 15px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; font-size: 0.95em; }
         .btn-delete { background: none; border: none; color: #e57373; font-size: 1.2em; cursor: pointer; padding: 0 0 0 10px; }
 
-        /* MODAL COM CALCULADORA */
+        /* MODAIS */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: none; align-items: center; justify-content: center; }
         .modal-content { background: white; padding: 25px; border-radius: 15px; width: 90%; max-width: 340px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
         .modal-title { margin-top: 0; color: var(--primary); margin-bottom: 5px; }
@@ -79,6 +79,21 @@
         .meal-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
         .btn-meal { padding: 12px; border: 2px solid #ddd; background: white; border-radius: 8px; font-weight: bold; color: #555; cursor: pointer; transition: 0.2s; }
         .btn-meal:hover { border-color: var(--primary); color: var(--primary); background: #f3e5f5; }
+        
+        /* Botão genérico para ações nos modais */
+        .btn-action-primary {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1.1em;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+
         .btn-cancel { margin-top: 15px; background: none; border: none; color: #888; text-decoration: underline; cursor: pointer; }
 
         .total-dia-card { background: var(--primary); color: white; padding: 15px; border-radius: 12px; margin-top: 20px; text-align: center; box-shadow: 0 4px 15px rgba(106, 27, 154, 0.3); }
@@ -98,7 +113,7 @@
         
         <div class="controls-container">
             <input type="date" id="inputData" class="date-input" onchange="mudarData(this.value)">
-            <button class="btn-print" onclick="gerarRelatorioPDF()" title="Gerar Relatório da Semana">🖨️</button>
+            <button class="btn-print" onclick="abrirModalPDF()" title="Imprimir Relatório">🖨️</button>
             <div style="display:flex; align-items:center; gap:5px;">
                 <span style="font-size:0.8em; font-weight:bold; color:var(--primary)">META:</span>
                 <input type="number" id="inputMeta" class="meta-editable" value="380" onchange="atualizarMeta(this.value)">
@@ -172,7 +187,27 @@
             <button class="btn-meal" onclick="confirmarRefeicao('Lanche')">🥪 Lanche</button>
             <button class="btn-meal" onclick="confirmarRefeicao('Jantar')">🍲 Jantar</button>
         </div>
-        <button class="btn-cancel" onclick="fecharModal()">Cancelar</button>
+        <button class="btn-cancel" onclick="fecharModal('mealModal')">Cancelar</button>
+    </div>
+</div>
+
+<div class="modal-overlay" id="pdfModal">
+    <div class="modal-content">
+        <h3 class="modal-title">Gerar Relatório</h3>
+        <p style="color:#666; font-size:0.9em; margin-bottom:15px;">
+            Escolha a segunda-feira inicial. O relatório incluirá todas as semanas com dados a partir dessa data.
+        </p>
+        
+        <div style="text-align:left; margin-bottom:15px;">
+            <label style="font-weight:bold; color:#444; font-size:0.9em;">Data Inicial (Segunda-feira):</label>
+            <input type="date" id="pdfStartDate" class="date-input" style="width:100%; box-sizing:border-box; margin-top:5px;">
+        </div>
+
+        <button class="btn-action-primary" onclick="executarGeracaoMultiplasSemanas()">
+            📄 Gerar PDF Completo
+        </button>
+        
+        <button class="btn-cancel" onclick="fecharModal('pdfModal')">Cancelar</button>
     </div>
 </div>
 
@@ -185,13 +220,11 @@
     let metaAtual = localStorage.getItem(PREF_META_KEY) || 380;
     let dataSelecionada = new Date().toISOString().split('T')[0];
     
-    // Variáveis da calculadora
     let fatorBase = 1;
     let pontosBase = 0;
 
     const searchInput = document.getElementById('searchInput');
     const resultsList = document.getElementById('resultsList');
-    const modal = document.getElementById('mealModal');
     const inputData = document.getElementById('inputData');
 
     window.onload = async () => {
@@ -240,7 +273,7 @@
             });
             document.getElementById('loadingMsg').style.display = 'none';
         } catch (e) {
-            console.warn("Tabela JSON não encontrada, usando vazia.");
+            console.warn("JSON não encontrado.");
             document.getElementById('loadingMsg').style.display = 'none';
         }
     }
@@ -268,7 +301,7 @@
         inputQtd.value = fatorBase;
         recalcularPontos();
         
-        modal.style.display = 'flex';
+        document.getElementById('mealModal').style.display = 'flex';
         searchInput.blur();
     }
 
@@ -283,9 +316,9 @@
         document.getElementById('displayPontosCalc').innerText = Math.round(totalCalculado) + " pontos";
     }
 
-    function fecharModal() {
-        modal.style.display = 'none';
-        itemSelecionadoTemp = null;
+    function fecharModal(idModal) {
+        document.getElementById(idModal).style.display = 'none';
+        if(idModal === 'mealModal') itemSelecionadoTemp = null;
     }
 
     function confirmarRefeicao(tipoRefeicao) {
@@ -309,7 +342,7 @@
         historico.push(novoRegistro);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(historico));
         
-        fecharModal();
+        fecharModal('mealModal');
         searchInput.value = '';
         resultsList.style.display = 'none';
         renderizarDiario();
@@ -394,64 +427,91 @@
         });
     }
 
-    // --- NOVA FUNÇÃO DE GERAR PDF ---
-    function gerarRelatorioPDF() {
-        // Usa a data selecionada no input principal como base
-        const inputDateVal = document.getElementById('inputData').value;
-        if (!inputDateVal) { alert("Selecione uma data para começar!"); return; }
+    // --- NOVA LÓGICA DE PDF MULTI-SEMANA ---
+    
+    function abrirModalPDF() {
+        // Tenta sugerir a segunda-feira da semana da data selecionada
+        const dataAtual = new Date(dataSelecionada);
+        const day = dataAtual.getDay();
+        const diff = dataAtual.getDate() - day + (day == 0 ? -6 : 1); // ajusta para segunda (1)
+        const segundaFeira = new Date(dataAtual.setDate(diff));
+        
+        document.getElementById('pdfStartDate').valueAsDate = segundaFeira;
+        document.getElementById('pdfModal').style.display = 'flex';
+    }
+
+    function obterUltimaDataRegistrada() {
+        const historico = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        if (historico.length === 0) return null;
+        // Ordena datas e pega a última
+        const datas = historico.map(h => h.data).sort();
+        return datas[datas.length - 1];
+    }
+
+    function executarGeracaoMultiplasSemanas() {
+        const startVal = document.getElementById('pdfStartDate').value;
+        if(!startVal) { alert("Selecione uma data!"); return; }
+
+        const ultimaDataString = obterUltimaDataRegistrada();
+        // Se não tem dados, usa a própria data de inicio só pra não quebrar
+        const ultimaData = ultimaDataString ? new Date(ultimaDataString) : new Date(startVal);
+        
+        // Ajusta data de inicio (base)
+        let cursorData = new Date(startVal + 'T00:00:00'); 
+        // OBS: Adicionei T00:00:00 para forçar hora local e evitar problema de fuso mudando o dia
 
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('l', 'mm', 'a4');
-
-        // Configuração de datas
-        const [ano, mes, dia] = inputDateVal.split('-').map(Number);
-        const dataBase = new Date(ano, mes - 1, dia);
-        
-        // Arrays para guardar os valores calculados
-        const diasNomes = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
-        
-        // Pega o banco de dados inteiro
         const historicoCompleto = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-
-        // Prepara as colunas (Datas) e os dados
-        const headerColunas = ["Refeição / Dia"];
-        const totaisRefeicoes = {
-            'Manhã': [], 'Almoço': [], 'Jantar': [], 'Lanche': [], 'TotalDia': []
-        };
         
-        // Loop de 7 dias a partir da data selecionada
-        const dataFinal = new Date(dataBase);
+        let paginaCount = 0;
 
-        for (let i = 0; i < 7; i++) {
-            // Data atual do loop
-            const dataAtual = new Date(dataBase);
-            dataAtual.setDate(dataBase.getDate() + i);
+        // Loop: Enquanto a data de inicio da semana for menor ou igual à última data com registro
+        while (cursorData <= ultimaData) {
+            // Se não é a primeira página, cria nova
+            if (paginaCount > 0) doc.addPage();
             
-            // Formatação YYYY-MM-DD para buscar no DB
-            const anoStr = dataAtual.getFullYear();
-            const mesStr = String(dataAtual.getMonth() + 1).padStart(2, '0');
-            const diaStr = String(dataAtual.getDate()).padStart(2, '0');
+            // Gera a semana atual
+            gerarPaginaSemana(doc, cursorData, historicoCompleto);
+            
+            // Avança 7 dias
+            cursorData.setDate(cursorData.getDate() + 7);
+            paginaCount++;
+        }
+
+        doc.save(`relatorio_completo_desde_${startVal}.pdf`);
+        fecharModal('pdfModal');
+    }
+
+    function gerarPaginaSemana(doc, dataInicioSemana, dados) {
+        const diasNomes = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
+        const headerColunas = ["Refeição / Dia"];
+        const totaisRefeicoes = { 'Manhã': [], 'Almoço': [], 'Jantar': [], 'Lanche': [], 'TotalDia': [] };
+
+        const dataFinal = new Date(dataInicioSemana);
+        
+        // Loop dos 7 dias daquela semana
+        for (let i = 0; i < 7; i++) {
+            const diaAtual = new Date(dataInicioSemana);
+            diaAtual.setDate(dataInicioSemana.getDate() + i);
+            
+            const anoStr = diaAtual.getFullYear();
+            const mesStr = String(diaAtual.getMonth() + 1).padStart(2, '0');
+            const diaStr = String(diaAtual.getDate()).padStart(2, '0');
             const dataKey = `${anoStr}-${mesStr}-${diaStr}`;
             
-            // Formatação DD/MM para cabeçalho
-            const dataCabecalho = `${diaStr}/${mesStr}`;
+            // Nome do dia
+            let diaSemanaIndex = diaAtual.getDay() - 1; 
+            if (diaSemanaIndex < 0) diaSemanaIndex = 6;
+            
+            headerColunas.push(`${diasNomes[diaSemanaIndex]}\n${diaStr}/${mesStr}`);
 
-            // Pega o nome do dia da semana (getDay: 0=Dom, 1=Seg... precisa ajustar pro array)
-            // Se quiser forçar que a data inicial seja "Segunda", ok. 
-            // Mas aqui estou pegando o nome real do dia da data.
-            let diaSemanaIndex = dataAtual.getDay() - 1; 
-            if (diaSemanaIndex < 0) diaSemanaIndex = 6; // Domingo vira 6
-
-            headerColunas.push(`${diasNomes[diaSemanaIndex] || 'Dia'}\n${dataCabecalho}`);
-
-            // Filtra itens desse dia
-            const itensDoDia = historicoCompleto.filter(x => x.data === dataKey);
-
-            // Soma por refeição
+            // Filtra e soma
+            const itensDoDia = dados.filter(x => x.data === dataKey);
             const m = itensDoDia.filter(x => x.refeicao === 'Manhã').reduce((a, b) => a + b.pontos, 0);
             const a = itensDoDia.filter(x => x.refeicao === 'Almoço').reduce((a, b) => a + b.pontos, 0);
             const j = itensDoDia.filter(x => x.refeicao === 'Jantar').reduce((a, b) => a + b.pontos, 0);
-            const l = itensDoDia.filter(x => x.refeicao === 'Lanche').reduce((a, b) => a + b.pontos, 0); // Todo o resto pode cair aqui se quiser
+            const l = itensDoDia.filter(x => x.refeicao === 'Lanche').reduce((a, b) => a + b.pontos, 0);
 
             totaisRefeicoes['Manhã'].push(m);
             totaisRefeicoes['Almoço'].push(a);
@@ -459,35 +519,31 @@
             totaisRefeicoes['Lanche'].push(l);
             totaisRefeicoes['TotalDia'].push(m + a + j + l);
             
-            if (i === 6) dataFinal.setDate(dataBase.getDate() + 6); // Atualiza data final pra label
+            if(i===6) dataFinal.setTime(diaAtual.getTime());
         }
 
-        // --- GERAÇÃO VISUAL DO PDF ---
+        // Cabeçalho PDF
         doc.setFontSize(14);
         doc.text("Drª Janine Malucelli Favorito - Endocrinologista / CRM 12449", 14, 15);
-        
         doc.setFontSize(22);
         doc.setFont("helvetica", "bold");
         doc.text("Diário Alimentar - Resumo de Pontos", 14, 25);
         
-        const formatarDataBR = (d) => d.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'});
+        const formatar = (d) => d.toLocaleDateString('pt-BR');
         doc.setFontSize(12);
         doc.setFont("helvetica", "normal");
-        doc.text(`Início da Semana: ${formatarDataBR(dataBase)}`, 14, 32);
+        doc.text(`Semana: ${formatar(dataInicioSemana)} a ${formatar(dataFinal)}`, 14, 32);
 
+        // Tabela
         const bodyData = [
             [{ content: "Manhã", styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, "", "", "", "", "", "", ""], 
             [{ content: "Total Manhã", styles: { fontStyle: 'bold' } }, ...totaisRefeicoes['Manhã']],
-
             [{ content: "Almoço", styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, "", "", "", "", "", "", ""],
             [{ content: "Total Almoço", styles: { fontStyle: 'bold' } }, ...totaisRefeicoes['Almoço']],
-
             [{ content: "Jantar", styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, "", "", "", "", "", "", ""],
             [{ content: "Total Jantar", styles: { fontStyle: 'bold' } }, ...totaisRefeicoes['Jantar']],
-
             [{ content: "Lanche", styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, "", "", "", "", "", "", ""],
             [{ content: "Total Lanche", styles: { fontStyle: 'bold' } }, ...totaisRefeicoes['Lanche']],
-
             [
                 { content: "TOTAL DIA", styles: { fontStyle: 'bold', fillColor: [200, 200, 200], textColor: [0, 0, 0] } },
                 ...totaisRefeicoes['TotalDia'].map(total => ({ content: total, styles: { fontStyle: 'bold', fillColor: [220, 220, 220] } }))
@@ -499,18 +555,10 @@
             head: [headerColunas],
             body: bodyData,
             theme: 'grid',
-            headStyles: {
-                fillColor: [40, 40, 40],
-                textColor: [255, 255, 255],
-                halign: 'center',
-                valign: 'middle',
-                minCellHeight: 15
-            },
+            headStyles: { fillColor: [40, 40, 40], textColor: [255, 255, 255], halign: 'center', valign: 'middle', minCellHeight: 15 },
             bodyStyles: { halign: 'center', valign: 'middle' },
             columnStyles: { 0: { cellWidth: 35, halign: 'left' } }
         });
-
-        doc.save(`relatorio_${inputDateVal}.pdf`);
     }
 
     searchInput.addEventListener('input', (e) => {
@@ -529,7 +577,8 @@
 
     document.addEventListener('click', (e) => {
         if (!searchInput.contains(e.target) && !resultsList.contains(e.target)) resultsList.style.display = 'none';
-        if (e.target === modal) fecharModal();
+        const modals = document.querySelectorAll('.modal-overlay');
+        modals.forEach(m => { if(e.target === m) m.style.display = 'none'; });
     });
 
 </script>
