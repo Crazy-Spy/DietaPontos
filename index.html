@@ -3,281 +3,354 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dieta do Flavio - 380pts</title>
+    <title>Diário Alimentar - Flavio</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f4f9; margin: 0; padding: 20px; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        :root { --primary: #6a1b9a; --bg: #f4f4f9; --white: #ffffff; --text: #333; --gray: #888; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg); margin: 0; padding: 20px; color: var(--text); padding-bottom: 80px; }
+        .container { max-width: 600px; margin: 0 auto; }
         
-        h1 { text-align: center; color: #6a1b9a; margin-bottom: 5px; margin-top: 0; }
-        .subtitle { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 20px; }
-
-        /* Placar */
-        .score-board { text-align: center; margin-bottom: 20px; padding: 20px; background: #f8f9fa; border-radius: 12px; border: 1px solid #e9ecef; }
-        .score-big { font-size: 3.5em; font-weight: 800; color: #6a1b9a; line-height: 1; margin: 10px 0; }
-        .score-meta { color: #888; font-size: 0.9em; text-transform: uppercase; letter-spacing: 1px; }
+        /* Cabeçalho e Meta */
+        header { text-align: center; margin-bottom: 20px; background: var(--white); padding: 15px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        h1 { margin: 0; font-size: 1.5em; color: var(--primary); }
+        
+        .meta-container { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; background: #f3e5f5; padding: 10px; border-radius: 8px; }
+        .meta-label { font-size: 0.9em; color: var(--primary); font-weight: bold; }
+        .meta-input-group { display: flex; align-items: center; gap: 5px; }
+        .meta-editable { background: transparent; border: none; font-size: 1.2em; font-weight: bold; color: var(--primary); width: 60px; text-align: right; border-bottom: 1px dashed var(--primary); }
         
         /* Barra de Progresso */
-        .progress-container { width: 100%; background-color: #e0e0e0; border-radius: 20px; height: 12px; margin-top: 15px; overflow: hidden; }
-        .progress-bar { height: 100%; background-color: #4caf50; width: 0%; transition: width 0.5s ease-in-out, background-color 0.3s; }
+        .progress-wrapper { margin-top: 15px; }
+        .progress-container { width: 100%; background-color: #e0e0e0; border-radius: 20px; height: 12px; overflow: hidden; }
+        .progress-bar { height: 100%; background-color: #4caf50; width: 0%; transition: width 0.5s ease-in-out; }
         .progress-bar.warning { background-color: #ff9800; }
         .progress-bar.danger { background-color: #f44336; }
+        .status-text { text-align: center; font-size: 0.85em; margin-top: 5px; color: var(--gray); }
 
         /* Busca */
-        .search-wrapper { position: relative; margin-bottom: 20px; }
-        .search-box { width: 100%; padding: 16px; font-size: 1.1em; border: 2px solid #ddd; border-radius: 12px; box-sizing: border-box; outline: none; transition: border-color 0.3s; }
-        .search-box:focus { border-color: #6a1b9a; }
+        .search-wrapper { position: relative; margin: 20px 0; z-index: 100; }
+        .search-box { width: 100%; padding: 16px; font-size: 1.1em; border: 2px solid #ddd; border-radius: 12px; box-sizing: border-box; outline: none; transition: border-color 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .search-box:focus { border-color: var(--primary); }
         
-        .results { list-style: none; padding: 0; margin: 5px 0 0 0; max-height: 250px; overflow-y: auto; border: 1px solid #eee; border-radius: 0 0 12px 12px; display: none; background: white; position: absolute; width: 100%; z-index: 10; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .results { list-style: none; padding: 0; margin: 5px 0 0 0; max-height: 300px; overflow-y: auto; border: 1px solid #eee; border-radius: 12px; display: none; background: white; position: absolute; width: 100%; box-shadow: 0 10px 20px rgba(0,0,0,0.15); }
         .results li { padding: 12px 16px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
         .results li:hover { background-color: #f3e5f5; }
-        .results li:last-child { border-bottom: none; }
-        .results li span.pts { font-weight: bold; color: #fff; background: #6a1b9a; padding: 4px 8px; border-radius: 6px; font-size: 0.9em; min-width: 30px; text-align: center; }
-        .results li small { color: #777; font-size: 0.85em; display: block; margin-top: 2px; }
+        .results li span.pts { font-weight: bold; color: var(--white); background: var(--primary); padding: 4px 8px; border-radius: 6px; font-size: 0.9em; }
 
-        /* Lista de Hoje */
-        .today-list { margin-top: 30px; }
-        .today-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; }
-        .today-header h3 { margin: 0; color: #444; }
-        .btn-clear { font-size: 0.8em; color: #f44336; background: none; border: none; cursor: pointer; text-decoration: underline; }
-
-        .today-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: center; animation: fadeIn 0.3s; }
-        .btn-delete { background: #ffebee; border: none; color: #c62828; cursor: pointer; font-size: 1.2em; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-left: 10px; transition: background 0.2s; }
-        .btn-delete:hover { background: #ffcdd2; }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        /* O DIÁRIO (Estilo PDF) */
+        .diary-section { margin-top: 20px; display: flex; flex-direction: column; gap: 15px; }
+        .meal-card { background: var(--white); border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #eee; }
+        .meal-header { background: #f8f9fa; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; }
+        .meal-title { font-weight: bold; color: #444; text-transform: uppercase; font-size: 0.9em; letter-spacing: 0.5px; }
+        .meal-total { font-weight: bold; color: var(--primary); font-size: 0.9em; }
         
-        .loading { text-align: center; padding: 20px; color: #666; font-style: italic; }
+        .meal-list { padding: 0; margin: 0; list-style: none; }
+        .meal-item { padding: 10px 15px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; font-size: 0.95em; }
+        .meal-item:last-child { border-bottom: none; }
+        .item-info small { color: #888; display: block; font-size: 0.8em; }
+        .btn-delete { background: none; border: none; color: #e57373; font-size: 1.2em; cursor: pointer; padding: 0 0 0 10px; }
+
+        /* Modal de Seleção de Refeição */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: none; align-items: center; justify-content: center; }
+        .modal-content { background: white; padding: 25px; border-radius: 15px; width: 90%; max-width: 320px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .modal-title { margin-top: 0; color: var(--primary); }
+        .meal-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+        .btn-meal { padding: 15px; border: 2px solid #ddd; background: white; border-radius: 8px; font-weight: bold; color: #555; cursor: pointer; transition: 0.2s; }
+        .btn-meal:hover, .btn-meal:focus { border-color: var(--primary); color: var(--primary); background: #f3e5f5; }
+        .btn-cancel { margin-top: 15px; background: none; border: none; color: #888; text-decoration: underline; cursor: pointer; }
+
+        .total-dia-card { background: var(--primary); color: white; padding: 15px; border-radius: 12px; margin-top: 20px; text-align: center; box-shadow: 0 4px 15px rgba(106, 27, 154, 0.3); }
+        .total-dia-val { font-size: 2em; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Controle de Pontos</h1>
-    <p class="subtitle">Dr. Flavio | Meta Diária: 380</p>
-
-    <div class="score-board">
-        <div class="score-meta">Consumido Hoje</div>
-        <div class="score-big" id="pontosHoje">0</div>
-        <div class="score-meta">Restante: <strong id="pontosRestante" style="color:#333">380</strong></div>
-        
-        <div class="progress-container">
-            <div class="progress-bar" id="progressBar"></div>
+    <header>
+        <h1>Diário Alimentar</h1>
+        <div class="meta-container">
+            <span class="meta-label">META DIÁRIA</span>
+            <div class="meta-input-group">
+                <input type="number" id="inputMeta" class="meta-editable" value="380" onchange="atualizarMeta(this.value)">
+                <span style="font-size:0.9em; color:#666">pts</span>
+            </div>
         </div>
-    </div>
+
+        <div class="progress-wrapper">
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <div class="status-text">
+                Consumido: <b id="totalConsumido">0</b> | Restante: <b id="totalRestante">0</b>
+            </div>
+        </div>
+    </header>
 
     <div class="search-wrapper">
-        <input type="text" id="searchInput" class="search-box" placeholder="🔍 O que você comeu?" autocomplete="off">
-        <div id="loadingMsg" style="display:none; font-size: 0.8em; color: #666; padding: 5px;">Carregando tabela...</div>
+        <input type="text" id="searchInput" class="search-box" placeholder="🔍 Adicionar alimento..." autocomplete="off">
+        <div id="loadingMsg" style="display:none; text-align:center; color:#999; margin-top:5px;">Carregando dados...</div>
         <ul id="resultsList" class="results"></ul>
     </div>
 
-    <div class="today-list">
-        <div class="today-header">
-            <h3>Histórico do Dia</h3>
-            <button class="btn-clear" onclick="resetarDia()">Limpar Dia</button>
-        </div>
-        <div id="historicoList">
+    <div class="diary-section" id="diaryContainer">
+        <div class="meal-card">
+            <div class="meal-header">
+                <span class="meal-title">Manhã</span>
+                <span class="meal-total" id="totalManha">0 pts</span>
             </div>
+            <ul class="meal-list" id="listManha"></ul>
+        </div>
+
+        <div class="meal-card">
+            <div class="meal-header">
+                <span class="meal-title">Almoço</span>
+                <span class="meal-total" id="totalAlmoco">0 pts</span>
+            </div>
+            <ul class="meal-list" id="listAlmoco"></ul>
+        </div>
+
+        <div class="meal-card">
+            <div class="meal-header">
+                <span class="meal-title">Jantar</span>
+                <span class="meal-total" id="totalJantar">0 pts</span>
+            </div>
+            <ul class="meal-list" id="listJantar"></ul>
+        </div>
+
+        <div class="meal-card">
+            <div class="meal-header">
+                <span class="meal-title">Lanche</span>
+                <span class="meal-total" id="totalLanche">0 pts</span>
+            </div>
+            <ul class="meal-list" id="listLanche"></ul>
+        </div>
+    </div>
+
+    <div class="total-dia-card">
+        <div>TOTAL DO DIA</div>
+        <div class="total-dia-val" id="totalGeralBig">0</div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="mealModal">
+    <div class="modal-content">
+        <h3 class="modal-title">Qual refeição?</h3>
+        <p id="modalItemName" style="color:#666; margin-bottom:20px;">...</p>
+        
+        <div class="meal-options">
+            <button class="btn-meal" onclick="confirmarRefeicao('Manhã')">☕ Manhã</button>
+            <button class="btn-meal" onclick="confirmarRefeicao('Almoço')">🍽️ Almoço</button>
+            <button class="btn-meal" onclick="confirmarRefeicao('Lanche')">🥪 Lanche</button>
+            <button class="btn-meal" onclick="confirmarRefeicao('Jantar')">🍲 Jantar</button>
+        </div>
+        <button class="btn-cancel" onclick="fecharModal()">Cancelar</button>
     </div>
 </div>
 
 <script>
-    // Configurações
-    const META_DIARIA = 380;
-    const STORAGE_KEY = 'dieta_flavio_history';
+    // --- CONFIGURAÇÃO ---
+    const STORAGE_KEY = 'dieta_flavio_db';
+    const PREF_META_KEY = 'dieta_flavio_meta';
+    
+    // Estado Global
     let tabelaAlimentos = [];
+    let itemSelecionadoTemp = null; // Guarda o item enquanto escolhe a refeição
+    let metaAtual = localStorage.getItem(PREF_META_KEY) || 380;
 
-    // Elementos DOM
+    // Elementos
     const searchInput = document.getElementById('searchInput');
     const resultsList = document.getElementById('resultsList');
-    const loadingMsg = document.getElementById('loadingMsg');
+    const modal = document.getElementById('mealModal');
 
     // --- INICIALIZAÇÃO ---
     window.onload = async () => {
+        document.getElementById('inputMeta').value = metaAtual;
         await carregarTabelaJSON();
-        carregarHoje();
+        renderizarDiario();
     };
 
-    // 1. Carregar JSON (Agora via fetch local no GitHub Pages)
+    function atualizarMeta(novaMeta) {
+        metaAtual = parseInt(novaMeta) || 380;
+        localStorage.setItem(PREF_META_KEY, metaAtual);
+        renderizarDiario(); // Recalcula a barra
+    }
+
+    // --- CARREGAR DADOS ---
     async function carregarTabelaJSON() {
         try {
-            loadingMsg.style.display = 'block';
-            const response = await fetch('tabela_pontos.json');
-            if (!response.ok) throw new Error("Erro ao carregar JSON");
+            document.getElementById('loadingMsg').style.display = 'block';
+            const res = await fetch('tabela_pontos.json');
+            const dados = await res.json();
             
-            const dados = await response.json();
-            
-            // "Achata" o JSON para facilitar a busca
+            // Prepara lista otimizada para busca
             tabelaAlimentos = [];
-            dados.forEach(categoria => {
-                if (categoria.itens) {
-                    categoria.itens.forEach(item => {
+            dados.forEach(cat => {
+                if (cat.itens) {
+                    cat.itens.forEach(item => {
                         tabelaAlimentos.push({
                             ...item,
-                            categoria: categoria.categoria,
-                            // Cria um campo de busca normalizado (sem acentos, minúsculo)
+                            cat: cat.categoria,
                             busca: item.nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
                         });
                     });
                 }
             });
-            loadingMsg.style.display = 'none';
-            console.log(`Tabela carregada com ${tabelaAlimentos.length} alimentos.`);
-        } catch (error) {
-            loadingMsg.innerText = "Erro ao carregar tabela de pontos. Verifique se o arquivo tabela_pontos.json está na mesma pasta.";
-            loadingMsg.style.color = "red";
-            console.error(error);
+            document.getElementById('loadingMsg').style.display = 'none';
+        } catch (e) {
+            console.error(e);
+            alert("Erro ao carregar tabela_pontos.json. Verifique se o arquivo está na pasta.");
         }
     }
 
-    // --- LÓGICA DE BANCO DE DADOS (LOCALSTORAGE) ---
-    
+    // --- LÓGICA DE BANCO DE DADOS (LOCAL) ---
     function getHistorico() {
-        const data = localStorage.getItem(STORAGE_KEY);
-        return data ? JSON.parse(data) : [];
+        return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
     }
 
     function saveHistorico(lista) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(lista));
     }
 
-    function adicionarItem(item) {
-        const historico = getHistorico();
-        const hoje = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    // --- FLUXO DE ADICIONAR ---
+    // 1. Clicou no item da busca -> Abre Modal
+    function abrirModalRefeicao(item) {
+        itemSelecionadoTemp = item;
+        document.getElementById('modalItemName').innerText = `${item.nome} (${item.pontos} pts)`;
+        modal.style.display = 'flex';
+        searchInput.blur();
+    }
 
-        const novoItem = {
-            id: Date.now(), // Timestamp único
+    function fecharModal() {
+        modal.style.display = 'none';
+        itemSelecionadoTemp = null;
+    }
+
+    // 2. Escolheu a refeição -> Salva
+    function confirmarRefeicao(tipoRefeicao) {
+        if (!itemSelecionadoTemp) return;
+
+        const historico = getHistorico();
+        const hoje = new Date().toISOString().split('T')[0];
+
+        const novoRegistro = {
+            id: Date.now(),
             data: hoje,
-            nome: item.nome,
-            pontos: isNaN(item.pontos) ? 0 : parseInt(item.pontos), // Trata "PROIBIDO" como 0 ou bloqueia se quiser
-            unidade: item.unidade,
-            categoria: item.categoria
+            nome: itemSelecionadoTemp.nome,
+            pontos: parseInt(itemSelecionadoTemp.pontos) || 0,
+            unidade: itemSelecionadoTemp.unidade,
+            refeicao: tipoRefeicao // Manhã, Almoço, etc.
         };
 
-        historico.push(novoItem);
+        historico.push(novoRegistro);
         saveHistorico(historico);
         
-        // Limpa UI
+        fecharModal();
         searchInput.value = '';
         resultsList.style.display = 'none';
-        carregarHoje();
+        renderizarDiario();
     }
 
     function removerItem(id) {
-        if(!confirm('Tem certeza que quer remover este item?')) return;
-        
-        let historico = getHistorico();
-        historico = historico.filter(item => item.id !== id);
-        saveHistorico(historico);
-        carregarHoje();
+        if(!confirm("Remover este item do diário?")) return;
+        let lista = getHistorico().filter(i => i.id !== id);
+        saveHistorico(lista);
+        renderizarDiario();
     }
 
-    function resetarDia() {
-        if(!confirm('Zerar todo o histórico de HOJE?')) return;
-        
+    // --- RENDERIZAÇÃO DO DIÁRIO ---
+    function renderizarDiario() {
+        const historico = getHistorico();
         const hoje = new Date().toISOString().split('T')[0];
-        let historico = getHistorico();
-        // Mantém apenas o que NÃO é de hoje
-        historico = historico.filter(item => item.data !== hoje);
-        
-        saveHistorico(historico);
-        carregarHoje();
-    }
+        const itensHoje = historico.filter(i => i.data === hoje);
 
-    // --- INTERFACE ---
+        // Agrupadores
+        const grupos = {
+            'Manhã': { total: 0, el: document.getElementById('listManha'), totalEl: document.getElementById('totalManha') },
+            'Almoço': { total: 0, el: document.getElementById('listAlmoco'), totalEl: document.getElementById('totalAlmoco') },
+            'Jantar': { total: 0, el: document.getElementById('listJantar'), totalEl: document.getElementById('totalJantar') },
+            'Lanche': { total: 0, el: document.getElementById('listLanche'), totalEl: document.getElementById('totalLanche') }
+        };
 
-    // Busca Inteligente
-    searchInput.addEventListener('input', (e) => {
-        const termo = e.target.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        
-        if (termo.length < 2) {
-            resultsList.style.display = 'none';
-            return;
+        // Limpa as listas
+        for (let key in grupos) grupos[key].el.innerHTML = '';
+
+        let totalDia = 0;
+
+        // Preenche as listas
+        itensHoje.forEach(item => {
+            // Se for uma refeição antiga sem categoria, joga em Lanche ou cria genérico (fallback)
+            const tipo = grupos[item.refeicao] ? item.refeicao : 'Lanche';
+            
+            grupos[tipo].total += item.pontos;
+            totalDia += item.pontos;
+
+            const li = document.createElement('li');
+            li.className = 'meal-item';
+            li.innerHTML = `
+                <div class="item-info">
+                    <strong>${item.nome}</strong>
+                    <small>${item.unidade}</small>
+                </div>
+                <div style="display:flex; align-items:center">
+                    <span style="font-weight:bold; color:#6a1b9a">${item.pontos}</span>
+                    <button class="btn-delete" onclick="removerItem(${item.id})">×</button>
+                </div>
+            `;
+            grupos[tipo].el.appendChild(li);
+        });
+
+        // Atualiza Subtotais e UI vazia
+        for (let key in grupos) {
+            grupos[key].totalEl.innerText = grupos[key].total + ' pts';
+            if (grupos[key].total === 0 && grupos[key].el.children.length === 0) {
+                grupos[key].el.innerHTML = '<li style="padding:10px; color:#ccc; font-style:italic; font-size:0.9em; text-align:center;">Nada registrado</li>';
+            }
         }
 
-        // Filtra
-        const resultados = tabelaAlimentos.filter(item => item.busca.includes(termo)).slice(0, 10); // Limita a 10 resultados
+        // Atualiza Totais Gerais
+        const restante = metaAtual - totalDia;
+        document.getElementById('totalConsumido').innerText = totalDia;
+        document.getElementById('totalRestante').innerText = restante;
+        document.getElementById('totalGeralBig').innerText = totalDia;
 
-        renderResults(resultados);
-    });
+        // Barra de Progresso
+        const pct = Math.min((totalDia / metaAtual) * 100, 100);
+        const bar = document.getElementById('progressBar');
+        bar.style.width = `${pct}%`;
+        bar.className = 'progress-bar';
+        if(pct > 80) bar.classList.add('warning');
+        if(pct >= 100) bar.classList.add('danger');
+    }
 
-    function renderResults(itens) {
+    // --- BUSCA (IGUAL ANTES) ---
+    searchInput.addEventListener('input', (e) => {
+        const termo = e.target.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        if (termo.length < 2) { resultsList.style.display = 'none'; return; }
+
+        const resultados = tabelaAlimentos.filter(i => i.busca.includes(termo)).slice(0, 8);
+        
         resultsList.innerHTML = '';
-        if (itens.length === 0) {
-            const li = document.createElement('li');
-            li.innerHTML = '<span style="color:#999">Nenhum alimento encontrado...</span>';
-            resultsList.appendChild(li);
+        if (resultados.length === 0) {
+            resultsList.innerHTML = '<li style="color:#999; cursor:default">Nada encontrado...</li>';
         } else {
-            itens.forEach(item => {
+            resultados.forEach(item => {
                 const li = document.createElement('li');
                 li.innerHTML = `
-                    <div>
-                        <strong>${item.nome}</strong>
-                        <small>${item.categoria} - ${item.unidade}</small>
-                    </div>
+                    <div><b>${item.nome}</b><br><small>${item.unidade}</small></div>
                     <span class="pts">${item.pontos}</span>
                 `;
-                li.onclick = () => adicionarItem(item);
+                li.onclick = () => abrirModalRefeicao(item); // AGORA ABRE MODAL
                 resultsList.appendChild(li);
             });
         }
         resultsList.style.display = 'block';
-    }
+    });
 
-    // Renderiza o Dashboard
-    function carregarHoje() {
-        const historico = getHistorico();
-        const hoje = new Date().toISOString().split('T')[0];
-        
-        const itensHoje = historico.filter(item => item.data === hoje);
-        const totalPontos = itensHoje.reduce((acc, item) => acc + item.pontos, 0);
-        
-        // Atualiza Placar
-        const restante = META_DIARIA - totalPontos;
-        
-        // Animação numérica simples
-        document.getElementById('pontosHoje').innerText = totalPontos;
-        const elRestante = document.getElementById('pontosRestante');
-        elRestante.innerText = restante;
-        elRestante.style.color = restante < 0 ? '#f44336' : '#333';
-
-        // Atualiza Barra
-        const bar = document.getElementById('progressBar');
-        const porcentagem = Math.min((totalPontos / META_DIARIA) * 100, 100);
-        bar.style.width = `${porcentagem}%`;
-        
-        bar.className = 'progress-bar'; // reset
-        if(porcentagem > 80) bar.classList.add('warning');
-        if(porcentagem >= 100) bar.classList.add('danger');
-
-        // Atualiza Lista
-        const listaDiv = document.getElementById('historicoList');
-        listaDiv.innerHTML = '';
-        
-        if (itensHoje.length === 0) {
-            listaDiv.innerHTML = '<div class="loading">Nada registrado hoje. Vamos comer?</div>';
-            return;
-        }
-
-        itensHoje.reverse().forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'today-item';
-            div.innerHTML = `
-                <div>
-                    <strong>${item.nome}</strong> <span style="color:#666; font-size:0.9em">(${item.pontos} pts)</span><br>
-                    <small style="color:#999">${item.unidade}</small>
-                </div>
-                <button class="btn-delete" onclick="removerItem(${item.id})">✕</button>
-            `;
-            listaDiv.appendChild(div);
-        });
-    }
-
-    // Fechar busca se clicar fora
+    // Fechar ao clicar fora
     document.addEventListener('click', (e) => {
         if (!searchInput.contains(e.target) && !resultsList.contains(e.target)) {
             resultsList.style.display = 'none';
         }
+        if (e.target === modal) fecharModal();
     });
 
 </script>
