@@ -12,20 +12,15 @@
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg); margin: 0; padding: 20px; color: var(--text); padding-bottom: 80px; }
         .container { max-width: 600px; margin: 0 auto; }
         
-        /* Cabeçalho e Meta */
+        /* Cabeçalho */
         header { text-align: center; margin-bottom: 20px; background: var(--white); padding: 15px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         h1 { margin: 0; font-size: 1.5em; color: var(--primary); }
         
         .controls-container { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; background: #f3e5f5; padding: 10px; border-radius: 8px; flex-wrap: wrap; gap: 10px; }
-        
-        .date-group { display: flex; align-items: center; gap: 5px; flex-grow: 1; }
-        .date-input { border: 1px solid #ddd; padding: 8px; border-radius: 6px; font-family: inherit; color: var(--primary); font-weight: bold; width: 100%; max-width: 140px; }
-
-        .meta-group { display: flex; align-items: center; gap: 5px; }
-        .meta-label { font-size: 0.8em; color: var(--primary); font-weight: bold; text-transform: uppercase; }
+        .date-input { border: 1px solid #ddd; padding: 8px; border-radius: 6px; font-family: inherit; color: var(--primary); font-weight: bold; flex-grow: 1; }
         .meta-editable { background: transparent; border: none; font-size: 1.2em; font-weight: bold; color: var(--primary); width: 50px; text-align: right; border-bottom: 1px dashed var(--primary); }
         
-        /* Barra de Progresso */
+        /* Progresso */
         .progress-wrapper { margin-top: 15px; }
         .progress-container { width: 100%; background-color: #e0e0e0; border-radius: 20px; height: 12px; overflow: hidden; }
         .progress-bar { height: 100%; background-color: #4caf50; width: 0%; transition: width 0.5s ease-in-out; }
@@ -37,47 +32,45 @@
         .search-wrapper { position: relative; margin: 20px 0; z-index: 100; }
         .search-box { width: 100%; padding: 16px; font-size: 1.1em; border: 2px solid #ddd; border-radius: 12px; box-sizing: border-box; outline: none; transition: border-color 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         .search-box:focus { border-color: var(--primary); }
-        
         .results { list-style: none; padding: 0; margin: 5px 0 0 0; max-height: 300px; overflow-y: auto; border: 1px solid #eee; border-radius: 12px; display: none; background: white; position: absolute; width: 100%; box-shadow: 0 10px 20px rgba(0,0,0,0.15); }
         .results li { padding: 12px 16px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
         .results li:hover { background-color: #f3e5f5; }
         .results li span.pts { font-weight: bold; color: var(--white); background: var(--primary); padding: 4px 8px; border-radius: 6px; font-size: 0.9em; }
 
-        /* O DIÁRIO */
+        /* Diário */
         .diary-section { margin-top: 20px; display: flex; flex-direction: column; gap: 15px; }
         .meal-card { background: var(--white); border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #eee; }
         .meal-header { background: #f8f9fa; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; }
         .meal-title { font-weight: bold; color: #444; text-transform: uppercase; font-size: 0.9em; letter-spacing: 0.5px; }
         .meal-total { font-weight: bold; color: var(--primary); font-size: 0.9em; }
-        
         .meal-list { padding: 0; margin: 0; list-style: none; }
         .meal-item { padding: 10px 15px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; font-size: 0.95em; }
-        .meal-item:last-child { border-bottom: none; }
-        .item-info small { color: #888; display: block; font-size: 0.8em; }
         .btn-delete { background: none; border: none; color: #e57373; font-size: 1.2em; cursor: pointer; padding: 0 0 0 10px; }
 
-        /* Modal de Seleção */
+        /* MODAL COM CALCULADORA */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: none; align-items: center; justify-content: center; }
-        .modal-content { background: white; padding: 25px; border-radius: 15px; width: 90%; max-width: 320px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-        .modal-title { margin-top: 0; color: var(--primary); }
+        .modal-content { background: white; padding: 25px; border-radius: 15px; width: 90%; max-width: 340px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .modal-title { margin-top: 0; color: var(--primary); margin-bottom: 5px; }
+        
+        /* Área de Calculo */
+        .calc-area { background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 15px 0; border: 1px solid #eee; }
+        .calc-info { font-size: 0.9em; color: #666; margin-bottom: 10px; }
+        .calc-input-group { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; }
+        .calc-input { width: 80px; padding: 8px; font-size: 1.2em; text-align: center; border: 2px solid #ddd; border-radius: 8px; font-weight: bold; color: #333; }
+        .calc-input:focus { border-color: var(--primary); outline: none; }
+        .calc-result { font-size: 1.1em; font-weight: bold; color: var(--primary); border-top: 1px solid #ddd; padding-top: 10px; display: block;}
+
         .meal-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
-        .btn-meal { padding: 15px; border: 2px solid #ddd; background: white; border-radius: 8px; font-weight: bold; color: #555; cursor: pointer; transition: 0.2s; }
+        .btn-meal { padding: 12px; border: 2px solid #ddd; background: white; border-radius: 8px; font-weight: bold; color: #555; cursor: pointer; transition: 0.2s; }
         .btn-meal:hover { border-color: var(--primary); color: var(--primary); background: #f3e5f5; }
         .btn-cancel { margin-top: 15px; background: none; border: none; color: #888; text-decoration: underline; cursor: pointer; }
 
-        /* Total do Dia Card */
         .total-dia-card { background: var(--primary); color: white; padding: 15px; border-radius: 12px; margin-top: 20px; text-align: center; box-shadow: 0 4px 15px rgba(106, 27, 154, 0.3); }
         .total-dia-val { font-size: 2em; font-weight: bold; }
-
-        /* Histórico Geral */
+        
         .history-section { margin-top: 40px; border-top: 2px solid #eee; padding-top: 20px; }
-        .history-title { color: #666; font-size: 0.9em; text-transform: uppercase; margin-bottom: 15px; text-align: center; letter-spacing: 1px; }
-        .history-list { list-style: none; padding: 0; }
-        .history-item { background: white; margin-bottom: 10px; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #eee; cursor: pointer; transition: transform 0.1s; }
-        .history-item:active { transform: scale(0.98); background: #f9f9f9; }
-        .history-date { font-weight: bold; color: #444; }
+        .history-item { background: white; margin-bottom: 10px; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #eee; cursor: pointer; }
         .history-pts { font-weight: bold; color: var(--primary); background: #f3e5f5; padding: 5px 10px; border-radius: 20px; font-size: 0.9em; }
-        .history-status { font-size: 1.2em; margin-left: 10px; }
 
     </style>
 </head>
@@ -88,12 +81,9 @@
         <h1>Diário Alimentar</h1>
         
         <div class="controls-container">
-            <div class="date-group">
-                <input type="date" id="inputData" class="date-input" onchange="mudarData(this.value)">
-            </div>
-
-            <div class="meta-group">
-                <span class="meta-label">Meta:</span>
+            <input type="date" id="inputData" class="date-input" onchange="mudarData(this.value)">
+            <div style="display:flex; align-items:center; gap:5px;">
+                <span style="font-size:0.8em; font-weight:bold; color:var(--primary)">META:</span>
                 <input type="number" id="inputMeta" class="meta-editable" value="380" onchange="atualizarMeta(this.value)">
             </div>
         </div>
@@ -116,35 +106,20 @@
 
     <div class="diary-section" id="diaryContainer">
         <div class="meal-card">
-            <div class="meal-header">
-                <span class="meal-title">Manhã</span>
-                <span class="meal-total" id="totalManha">0 pts</span>
-            </div>
+            <div class="meal-header"><span class="meal-title">Manhã</span><span class="meal-total" id="totalManha">0 pts</span></div>
             <ul class="meal-list" id="listManha"></ul>
         </div>
-
         <div class="meal-card">
-            <div class="meal-header">
-                <span class="meal-title">Almoço</span>
-                <span class="meal-total" id="totalAlmoco">0 pts</span>
-            </div>
+            <div class="meal-header"><span class="meal-title">Almoço</span><span class="meal-total" id="totalAlmoco">0 pts</span></div>
             <ul class="meal-list" id="listAlmoco"></ul>
         </div>
-
         <div class="meal-card">
-            <div class="meal-header">
-                <span class="meal-title">Jantar</span>
-                <span class="meal-total" id="totalJantar">0 pts</span>
-            </div>
-            <ul class="meal-list" id="listJantar"></ul>
-        </div>
-
-        <div class="meal-card">
-            <div class="meal-header">
-                <span class="meal-title">Lanche</span>
-                <span class="meal-total" id="totalLanche">0 pts</span>
-            </div>
+            <div class="meal-header"><span class="meal-title">Lanche</span><span class="meal-total" id="totalLanche">0 pts</span></div>
             <ul class="meal-list" id="listLanche"></ul>
+        </div>
+        <div class="meal-card">
+            <div class="meal-header"><span class="meal-title">Jantar</span><span class="meal-total" id="totalJantar">0 pts</span></div>
+            <ul class="meal-list" id="listJantar"></ul>
         </div>
     </div>
 
@@ -154,17 +129,26 @@
     </div>
 
     <div class="history-section">
-        <div class="history-title">Histórico de Dias Anteriores</div>
-        <ul class="history-list" id="historicoGeralLista">
-            </ul>
+        <div style="text-align:center; color:#666; font-size:0.9em; text-transform:uppercase; margin-bottom:15px;">Histórico</div>
+        <ul style="list-style:none; padding:0" id="historicoGeralLista"></ul>
     </div>
 </div>
 
 <div class="modal-overlay" id="mealModal">
     <div class="modal-content">
-        <h3 class="modal-title">Qual refeição?</h3>
-        <p id="modalItemName" style="color:#666; margin-bottom:20px;">...</p>
+        <h3 class="modal-title" id="modalTitle">...</h3>
+        <p style="margin:0; font-size:0.9em; color:#666" id="modalUnitDesc">...</p>
         
+        <div class="calc-area">
+            <div class="calc-info">Quanto você comeu?</div>
+            <div class="calc-input-group">
+                <input type="number" id="inputQtd" class="calc-input" step="0.1" oninput="recalcularPontos()">
+                <span id="labelUnidadeCalc" style="font-size:0.9em; font-weight:bold;">unid</span>
+            </div>
+            <span class="calc-result" id="displayPontosCalc">0 pontos</span>
+        </div>
+        
+        <div style="font-size:0.8em; color:#888; margin-bottom:10px;">Onde lançar?</div>
         <div class="meal-options">
             <button class="btn-meal" onclick="confirmarRefeicao('Manhã')">☕ Manhã</button>
             <button class="btn-meal" onclick="confirmarRefeicao('Almoço')">🍽️ Almoço</button>
@@ -176,28 +160,26 @@
 </div>
 
 <script>
-    // --- CONFIGURAÇÃO ---
     const STORAGE_KEY = 'dieta_flavio_db';
     const PREF_META_KEY = 'dieta_flavio_meta';
     
-    // Estado Global
     let tabelaAlimentos = [];
     let itemSelecionadoTemp = null;
     let metaAtual = localStorage.getItem(PREF_META_KEY) || 380;
-    let dataSelecionada = new Date().toISOString().split('T')[0]; // Padrão YYYY-MM-DD
+    let dataSelecionada = new Date().toISOString().split('T')[0];
+    
+    // Variáveis da calculadora
+    let fatorBase = 1;
+    let pontosBase = 0;
 
-    // Elementos
     const searchInput = document.getElementById('searchInput');
     const resultsList = document.getElementById('resultsList');
     const modal = document.getElementById('mealModal');
     const inputData = document.getElementById('inputData');
 
-    // --- INICIALIZAÇÃO ---
     window.onload = async () => {
-        // Define data de hoje no input
         inputData.value = dataSelecionada;
         document.getElementById('inputMeta').value = metaAtual;
-        
         await carregarTabelaJSON();
         renderizarDiario();
         renderizarHistoricoGeral();
@@ -207,29 +189,26 @@
         if(!novaData) return;
         dataSelecionada = novaData;
         renderizarDiario();
-        // Feedback visual na label de total
-        const hoje = new Date().toISOString().split('T')[0];
         const label = document.getElementById('labelDataTotal');
+        const hoje = new Date().toISOString().split('T')[0];
         if (novaData === hoje) label.innerText = "HOJE";
         else {
-            const partes = novaData.split('-');
-            label.innerText = `${partes[2]}/${partes[1]}`;
+            const p = novaData.split('-');
+            label.innerText = `${p[2]}/${p[1]}`;
         }
     }
 
-    function atualizarMeta(novaMeta) {
-        metaAtual = parseInt(novaMeta) || 380;
+    function atualizarMeta(val) {
+        metaAtual = parseInt(val) || 380;
         localStorage.setItem(PREF_META_KEY, metaAtual);
         renderizarDiario();
     }
 
-    // --- CARREGAR DADOS ---
     async function carregarTabelaJSON() {
         try {
             document.getElementById('loadingMsg').style.display = 'block';
             const res = await fetch('tabela_pontos.json');
             const dados = await res.json();
-            
             tabelaAlimentos = [];
             dados.forEach(cat => {
                 if (cat.itens) {
@@ -244,26 +223,70 @@
             });
             document.getElementById('loadingMsg').style.display = 'none';
         } catch (e) {
-            console.error(e);
-            alert("Erro ao carregar tabela_pontos.json.");
+            alert("Erro ao carregar tabela.");
         }
     }
 
-    // --- LÓGICA DE BANCO DE DADOS ---
-    function getHistorico() {
-        return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    // --- LÓGICA DE CÁLCULO DE UNIDADES (O PULO DO GATO) ---
+    function extrairQuantidadeBase(textoUnidade) {
+        // Tenta achar fração "1/2"
+        const fracao = textoUnidade.match(/^(\d+)\/(\d+)/);
+        if (fracao) {
+            return parseFloat(fracao[1]) / parseFloat(fracao[2]);
+        }
+        
+        // Tenta achar número inteiro no começo "3 unidades", "100g"
+        const numero = textoUnidade.match(/^(\d+)/);
+        if (numero) {
+            return parseFloat(numero[1]);
+        }
+        
+        // Se não achar nada (ex: "Colher de sopa", "Unidade"), assume 1
+        return 1;
     }
 
-    function saveHistorico(lista) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(lista));
-    }
-
-    // --- FLUXO DE ADICIONAR ---
     function abrirModalRefeicao(item) {
         itemSelecionadoTemp = item;
-        document.getElementById('modalItemName').innerText = `${item.nome} (${item.pontos} pts)`;
+        
+        // Configura Calculadora
+        pontosBase = typeof item.pontos === 'number' ? item.pontos : 0; // Se for "PROIBIDO", vira 0
+        fatorBase = extrairQuantidadeBase(item.unidade);
+        
+        // Texto da unidade limpo (tira o numero da frente pra exibir na label)
+        // ex: "3 unidades" vira "unidades"
+        let labelUnidade = item.unidade.replace(/^[\d\/]+\s*/, '');
+        if (labelUnidade.length < 2) labelUnidade = "Porção(ões)";
+
+        document.getElementById('modalTitle').innerText = item.nome;
+        document.getElementById('modalUnitDesc').innerText = `Base: ${item.unidade} = ${item.pontos} pts`;
+        
+        document.getElementById('labelUnidadeCalc').innerText = labelUnidade;
+        
+        // Seta o valor inicial igual à base (ex: 3)
+        const inputQtd = document.getElementById('inputQtd');
+        inputQtd.value = fatorBase;
+        
+        recalcularPontos();
+        
         modal.style.display = 'flex';
         searchInput.blur();
+    }
+
+    function recalcularPontos() {
+        const inputQtd = document.getElementById('inputQtd');
+        const qtdInserida = parseFloat(inputQtd.value);
+        
+        if (isNaN(qtdInserida) || qtdInserida < 0) {
+            document.getElementById('displayPontosCalc').innerText = "---";
+            return;
+        }
+
+        // REGRA DE TRÊS: (Inserido / Base) * PontosBase
+        // Ex: Base 3 unid (25pts). Comi 5. (5/3)*25 = 41.6
+        const totalCalculado = (qtdInserida / fatorBase) * pontosBase;
+        
+        // Arredonda
+        document.getElementById('displayPontosCalc').innerText = Math.round(totalCalculado) + " pontos";
     }
 
     function fecharModal() {
@@ -274,50 +297,54 @@
     function confirmarRefeicao(tipoRefeicao) {
         if (!itemSelecionadoTemp) return;
 
-        const historico = getHistorico();
+        const qtdInserida = parseFloat(document.getElementById('inputQtd').value) || fatorBase;
+        const pontosFinais = Math.round((qtdInserida / fatorBase) * pontosBase);
+
+        const historico = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
         
-        // USA A DATA SELECIONADA NO INPUT, NÃO NECESSARIAMENTE HOJE
-        const dataRegistro = dataSelecionada; 
+        // Cria descrição personalizada ex: "Bolacha (5 unidades)"
+        // Pega só o texto da unidade (ex: "unid.")
+        let sufixoUnidade = itemSelecionadoTemp.unidade.replace(/^[\d\/]+\s*/, '');
+        if(sufixoUnidade === itemSelecionadoTemp.unidade) sufixoUnidade = ""; // Se nao tinha numero, nao duplica
 
         const novoRegistro = {
             id: Date.now(),
-            data: dataRegistro,
+            data: dataSelecionada,
             nome: itemSelecionadoTemp.nome,
-            pontos: parseInt(itemSelecionadoTemp.pontos) || 0,
-            unidade: itemSelecionadoTemp.unidade,
+            pontos: pontosFinais,
+            unidade: `${qtdInserida} ${sufixoUnidade} (calc)`, // Marca que foi calculado
             refeicao: tipoRefeicao
         };
 
         historico.push(novoRegistro);
-        saveHistorico(historico);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(historico));
         
         fecharModal();
         searchInput.value = '';
         resultsList.style.display = 'none';
         renderizarDiario();
-        renderizarHistoricoGeral(); // Atualiza a lista lá embaixo tb
+        renderizarHistoricoGeral();
     }
 
     function removerItem(id) {
-        if(!confirm("Remover este item?")) return;
-        let lista = getHistorico().filter(i => i.id !== id);
-        saveHistorico(lista);
+        if(!confirm("Apagar item?")) return;
+        let historico = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        historico = historico.filter(i => i.id !== id);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(historico));
         renderizarDiario();
         renderizarHistoricoGeral();
     }
 
-    // --- RENDERIZAÇÃO DO DIÁRIO (Dia Selecionado) ---
+    // --- RENDERIZAÇÃO ---
     function renderizarDiario() {
-        const historico = getHistorico();
-        
-        // Filtra apenas pela data selecionada no calendário
+        const historico = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
         const itensDoDia = historico.filter(i => i.data === dataSelecionada);
 
         const grupos = {
-            'Manhã': { total: 0, el: document.getElementById('listManha'), totalEl: document.getElementById('totalManha') },
-            'Almoço': { total: 0, el: document.getElementById('listAlmoco'), totalEl: document.getElementById('totalAlmoco') },
-            'Jantar': { total: 0, el: document.getElementById('listJantar'), totalEl: document.getElementById('totalJantar') },
-            'Lanche': { total: 0, el: document.getElementById('listLanche'), totalEl: document.getElementById('totalLanche') }
+            'Manhã': { total: 0, el: document.getElementById('listManha'), tel: document.getElementById('totalManha') },
+            'Almoço': { total: 0, el: document.getElementById('listAlmoco'), tel: document.getElementById('totalAlmoco') },
+            'Jantar': { total: 0, el: document.getElementById('listJantar'), tel: document.getElementById('totalJantar') },
+            'Lanche': { total: 0, el: document.getElementById('listLanche'), tel: document.getElementById('totalLanche') }
         };
 
         for (let key in grupos) grupos[key].el.innerHTML = '';
@@ -331,9 +358,9 @@
             const li = document.createElement('li');
             li.className = 'meal-item';
             li.innerHTML = `
-                <div class="item-info">
+                <div>
                     <strong>${item.nome}</strong>
-                    <small>${item.unidade}</small>
+                    <small style="color:#666">${item.unidade}</small>
                 </div>
                 <div style="display:flex; align-items:center">
                     <span style="font-weight:bold; color:#6a1b9a">${item.pontos}</span>
@@ -344,10 +371,7 @@
         });
 
         for (let key in grupos) {
-            grupos[key].totalEl.innerText = grupos[key].total + ' pts';
-            if (grupos[key].total === 0 && grupos[key].el.children.length === 0) {
-                grupos[key].el.innerHTML = '<li style="padding:10px; color:#ccc; font-style:italic; font-size:0.9em; text-align:center;">Nada registrado</li>';
-            }
+            grupos[key].tel.innerText = grupos[key].total + ' pts';
         }
 
         const restante = metaAtual - totalDia;
@@ -363,96 +387,44 @@
         if(pct >= 100) bar.classList.add('danger');
     }
 
-    // --- HISTÓRICO GERAL (Dias Anteriores) ---
     function renderizarHistoricoGeral() {
-        const historico = getHistorico();
+        const historico = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
         const listaEl = document.getElementById('historicoGeralLista');
         listaEl.innerHTML = '';
-
-        // Agrupa por data
-        const resumoPorDia = {};
-        historico.forEach(item => {
-            if (!resumoPorDia[item.data]) resumoPorDia[item.data] = 0;
-            resumoPorDia[item.data] += item.pontos;
-        });
-
-        // Transforma em array e ordena (mais recente primeiro)
-        const datasOrdenadas = Object.keys(resumoPorDia).sort().reverse();
+        const resumo = {};
+        historico.forEach(i => { resumo[i.data] = (resumo[i.data] || 0) + i.pontos; });
         
-        // Remove a data selecionada atualmente da lista (pra não duplicar informação)
-        const dataAtualNoInput = dataSelecionada;
-
-        datasOrdenadas.forEach(dataStr => {
-            // Ignora o dia que já está na tela principal pra não ficar redundante
-            if (dataStr === dataAtualNoInput) return;
-
-            const total = resumoPorDia[dataStr];
-            
-            // Formata data YYYY-MM-DD para DD/MM/YYYY
-            const partes = dataStr.split('-');
-            const dataFormatada = `${partes[2]}/${partes[1]}/${partes[0]}`;
-
-            // Emoji de status
-            let emoji = '✅';
-            if (total > metaAtual) emoji = '⚠️';
-            if (total > metaAtual + 50) emoji = '🚨';
-
+        Object.keys(resumo).sort().reverse().forEach(d => {
+            if(d === dataSelecionada) return; // Nao mostra o dia atual na lista
+            const p = d.split('-');
             const li = document.createElement('li');
             li.className = 'history-item';
-            li.onclick = () => {
-                // Ao clicar, muda a data principal para visualizar esse dia
-                inputData.value = dataStr;
-                mudarData(dataStr);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            };
-
-            li.innerHTML = `
-                <div class="history-date">${dataFormatada}</div>
-                <div style="display:flex; align-items:center">
-                    <span class="history-pts">${total} pts</span>
-                    <span class="history-status">${emoji}</span>
-                </div>
-            `;
+            li.innerHTML = `<div>${p[2]}/${p[1]}/${p[0]}</div><div class="history-pts">${resumo[d]} pts</div>`;
+            li.onclick = () => { inputData.value = d; mudarData(d); window.scrollTo(0,0); };
             listaEl.appendChild(li);
         });
-
-        if (datasOrdenadas.length === 0 || (datasOrdenadas.length === 1 && datasOrdenadas[0] === dataAtualNoInput)) {
-            listaEl.innerHTML = '<div style="text-align:center; color:#999; padding:10px">Nenhum histórico anterior ainda.</div>';
-        }
     }
 
-    // --- BUSCA ---
+    // Busca
     searchInput.addEventListener('input', (e) => {
-        const termo = e.target.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        if (termo.length < 2) { resultsList.style.display = 'none'; return; }
-
-        const resultados = tabelaAlimentos.filter(i => i.busca.includes(termo)).slice(0, 8);
-        
+        const t = e.target.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        if (t.length < 2) { resultsList.style.display = 'none'; return; }
+        const res = tabelaAlimentos.filter(i => i.busca.includes(t)).slice(0, 8);
         resultsList.innerHTML = '';
-        if (resultados.length === 0) {
-            resultsList.innerHTML = '<li style="color:#999; cursor:default">Nada encontrado...</li>';
-        } else {
-            resultados.forEach(item => {
-                const li = document.createElement('li');
-                li.innerHTML = `
-                    <div><b>${item.nome}</b><br><small>${item.unidade}</small></div>
-                    <span class="pts">${item.pontos}</span>
-                `;
-                li.onclick = () => abrirModalRefeicao(item);
-                resultsList.appendChild(li);
-            });
-        }
-        resultsList.style.display = 'block';
+        res.forEach(item => {
+            const li = document.createElement('li');
+            li.innerHTML = `<div><b>${item.nome}</b><br><small>${item.unidade}</small></div><span class="pts">${item.pontos}</span>`;
+            li.onclick = () => abrirModalRefeicao(item);
+            resultsList.appendChild(li);
+        });
+        resultsList.style.display = res.length ? 'block' : 'none';
     });
 
     document.addEventListener('click', (e) => {
-        if (!searchInput.contains(e.target) && !resultsList.contains(e.target)) {
-            resultsList.style.display = 'none';
-        }
+        if (!searchInput.contains(e.target) && !resultsList.contains(e.target)) resultsList.style.display = 'none';
         if (e.target === modal) fecharModal();
     });
 
 </script>
-
 </body>
 </html>
