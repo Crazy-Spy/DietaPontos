@@ -200,7 +200,14 @@
         
         <div style="text-align:left; margin-bottom:15px;">
             <label style="font-weight:bold; color:#444; font-size:0.9em;">Data Inicial (Segunda-feira):</label>
-            <input type="date" id="pdfStartDate" class="date-input" style="width:100%; box-sizing:border-box; margin-top:5px;">
+            
+            <input type="date" id="pdfStartDate" class="date-input" 
+                   style="width:100%; box-sizing:border-box; margin-top:5px;"
+                   onchange="atualizarTextoDataPDF()">
+            
+            <p id="pdfDatePreview" style="font-size:0.9em; color:var(--primary); font-weight:bold; margin-top:5px; text-align:right;">
+                ...
+            </p>
         </div>
 
         <button class="btn-action-primary" onclick="executarGeracaoMultiplasSemanas()">
@@ -218,7 +225,11 @@
     let tabelaAlimentos = [];
     let itemSelecionadoTemp = null;
     let metaAtual = localStorage.getItem(PREF_META_KEY) || 380;
-    let dataSelecionada = new Date().toISOString().split('T')[0];
+    
+    // Pega data local corrigida
+    const hoje = new Date();
+    const hojeLocal = new Date(hoje.getTime() - (hoje.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+    let dataSelecionada = hojeLocal;
     
     let fatorBase = 1;
     let pontosBase = 0;
@@ -240,8 +251,10 @@
         dataSelecionada = novaData;
         renderizarDiario();
         const label = document.getElementById('labelDataTotal');
-        const hoje = new Date().toISOString().split('T')[0];
-        if (novaData === hoje) label.innerText = "HOJE";
+        const hojeAgora = new Date();
+        const hojeStr = new Date(hojeAgora.getTime() - (hojeAgora.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+        
+        if (novaData === hojeStr) label.innerText = "HOJE";
         else {
             const p = novaData.split('-');
             label.innerText = `${p[2]}/${p[1]}`;
@@ -427,23 +440,55 @@
         });
     }
 
-    // --- NOVA LÓGICA DE PDF MULTI-SEMANA ---
-    
+    // --- LÓGICA DE PDF CORRIGIDA ---
+
     function abrirModalPDF() {
-        // Tenta sugerir a segunda-feira da semana da data selecionada
-        const dataAtual = new Date(dataSelecionada);
-        const day = dataAtual.getDay();
-        const diff = dataAtual.getDate() - day + (day == 0 ? -6 : 1); // ajusta para segunda (1)
-        const segundaFeira = new Date(dataAtual.setDate(diff));
+        // Pega a data que está na tela principal (inputData)
+        // Cria objeto Date setando meio-dia (12:00) pra evitar bug de fuso horário voltando dia
+        const partes = dataSelecionada.split('-'); // YYYY, MM, DD
+        // Mês no JS começa em 0
+        const dataRef = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]), 12, 0, 0);
+
+        const diaSemana = dataRef.getDay(); // 0(Dom) a 6(Sab)
+        // Quantos dias voltar pra chegar na segunda (1)?
+        // Se for dom(0) volta 6. Se for seg(1) volta 0. Se for ter(2) volta 1...
+        const diasVoltar = (diaSemana === 0) ? 6 : (diaSemana - 1);
         
-        document.getElementById('pdfStartDate').valueAsDate = segundaFeira;
+        dataRef.setDate(dataRef.getDate() - diasVoltar);
+        
+        // Formata para YYYY-MM-DD para o input value
+        const y = dataRef.getFullYear();
+        const m = String(dataRef.getMonth() + 1).padStart(2, '0');
+        const d = String(dataRef.getDate()).padStart(2, '0');
+        
+        const inputPDF = document.getElementById('pdfStartDate');
+        inputPDF.value = `${y}-${m}-${d}`;
+        
+        atualizarTextoDataPDF(); // Atualiza o texto amigável
         document.getElementById('pdfModal').style.display = 'flex';
+    }
+
+    function atualizarTextoDataPDF() {
+        const val = document.getElementById('pdfStartDate').value;
+        if(!val) return;
+        
+        const p = val.split('-');
+        // Força a interpretação correta criando data ao meio-dia
+        const d = new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2]), 12, 0, 0);
+        
+        const opcoes = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' };
+        // Exibe: "Segunda-feira, 08/12/2025"
+        const texto = d.toLocaleDateString('pt-BR', opcoes);
+        
+        // Coloca primeira letra maiúscula
+        const textoFormatado = texto.charAt(0).toUpperCase() + texto.slice(1);
+        
+        document.getElementById('pdfDatePreview').innerText = "Selecionado: " + textoFormatado;
     }
 
     function obterUltimaDataRegistrada() {
         const historico = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
         if (historico.length === 0) return null;
-        // Ordena datas e pega a última
         const datas = historico.map(h => h.data).sort();
         return datas[datas.length - 1];
     }
@@ -453,12 +498,12 @@
         if(!startVal) { alert("Selecione uma data!"); return; }
 
         const ultimaDataString = obterUltimaDataRegistrada();
-        // Se não tem dados, usa a própria data de inicio só pra não quebrar
-        const ultimaData = ultimaDataString ? new Date(ultimaDataString) : new Date(startVal);
-        
-        // Ajusta data de inicio (base)
-        let cursorData = new Date(startVal + 'T00:00:00'); 
-        // OBS: Adicionei T00:00:00 para forçar hora local e evitar problema de fuso mudando o dia
+        // Cria as datas usando o truque do meio-dia para garantir iteração segura
+        const partesUltima = (ultimaDataString || startVal).split('-');
+        const ultimaData = new Date(parseInt(partesUltima[0]), parseInt(partesUltima[1])-1, parseInt(partesUltima[2]), 12, 0, 0);
+
+        const partesInicio = startVal.split('-');
+        let cursorData = new Date(parseInt(partesInicio[0]), parseInt(partesInicio[1])-1, parseInt(partesInicio[2]), 12, 0, 0);
 
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('l', 'mm', 'a4');
@@ -466,12 +511,10 @@
         
         let paginaCount = 0;
 
-        // Loop: Enquanto a data de inicio da semana for menor ou igual à última data com registro
+        // Loop enquanto cursor <= ultimaData
         while (cursorData <= ultimaData) {
-            // Se não é a primeira página, cria nova
             if (paginaCount > 0) doc.addPage();
             
-            // Gera a semana atual
             gerarPaginaSemana(doc, cursorData, historicoCompleto);
             
             // Avança 7 dias
@@ -488,20 +531,21 @@
         const headerColunas = ["Refeição / Dia"];
         const totaisRefeicoes = { 'Manhã': [], 'Almoço': [], 'Jantar': [], 'Lanche': [], 'TotalDia': [] };
 
-        const dataFinal = new Date(dataInicioSemana);
+        // Clona data para não alterar o cursor principal
+        const dataLoop = new Date(dataInicioSemana);
+        const dataFinalLabel = new Date(dataInicioSemana);
+        dataFinalLabel.setDate(dataFinalLabel.getDate() + 6);
         
-        // Loop dos 7 dias daquela semana
+        // Loop dos 7 dias
         for (let i = 0; i < 7; i++) {
-            const diaAtual = new Date(dataInicioSemana);
-            diaAtual.setDate(dataInicioSemana.getDate() + i);
-            
-            const anoStr = diaAtual.getFullYear();
-            const mesStr = String(diaAtual.getMonth() + 1).padStart(2, '0');
-            const diaStr = String(diaAtual.getDate()).padStart(2, '0');
+            // Garante YYYY-MM-DD local
+            const anoStr = dataLoop.getFullYear();
+            const mesStr = String(dataLoop.getMonth() + 1).padStart(2, '0');
+            const diaStr = String(dataLoop.getDate()).padStart(2, '0');
             const dataKey = `${anoStr}-${mesStr}-${diaStr}`;
             
-            // Nome do dia
-            let diaSemanaIndex = diaAtual.getDay() - 1; 
+            // Dia da semana (ajuste para array 0=Segunda)
+            let diaSemanaIndex = dataLoop.getDay() - 1; 
             if (diaSemanaIndex < 0) diaSemanaIndex = 6;
             
             headerColunas.push(`${diasNomes[diaSemanaIndex]}\n${diaStr}/${mesStr}`);
@@ -519,7 +563,8 @@
             totaisRefeicoes['Lanche'].push(l);
             totaisRefeicoes['TotalDia'].push(m + a + j + l);
             
-            if(i===6) dataFinal.setTime(diaAtual.getTime());
+            // Avança 1 dia
+            dataLoop.setDate(dataLoop.getDate() + 1);
         }
 
         // Cabeçalho PDF
@@ -532,7 +577,7 @@
         const formatar = (d) => d.toLocaleDateString('pt-BR');
         doc.setFontSize(12);
         doc.setFont("helvetica", "normal");
-        doc.text(`Semana: ${formatar(dataInicioSemana)} a ${formatar(dataFinal)}`, 14, 32);
+        doc.text(`Semana: ${formatar(dataInicioSemana)} a ${formatar(dataFinalLabel)}`, 14, 32);
 
         // Tabela
         const bodyData = [
