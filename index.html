@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dieta do Flavio - 380pts</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f4f9; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        
+        h1 { text-align: center; color: #6a1b9a; margin-bottom: 5px; margin-top: 0; }
+        .subtitle { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 20px; }
+
+        /* Placar */
+        .score-board { text-align: center; margin-bottom: 20px; padding: 20px; background: #f8f9fa; border-radius: 12px; border: 1px solid #e9ecef; }
+        .score-big { font-size: 3.5em; font-weight: 800; color: #6a1b9a; line-height: 1; margin: 10px 0; }
+        .score-meta { color: #888; font-size: 0.9em; text-transform: uppercase; letter-spacing: 1px; }
+        
+        /* Barra de Progresso */
+        .progress-container { width: 100%; background-color: #e0e0e0; border-radius: 20px; height: 12px; margin-top: 15px; overflow: hidden; }
+        .progress-bar { height: 100%; background-color: #4caf50; width: 0%; transition: width 0.5s ease-in-out, background-color 0.3s; }
+        .progress-bar.warning { background-color: #ff9800; }
+        .progress-bar.danger { background-color: #f44336; }
+
+        /* Busca */
+        .search-wrapper { position: relative; margin-bottom: 20px; }
+        .search-box { width: 100%; padding: 16px; font-size: 1.1em; border: 2px solid #ddd; border-radius: 12px; box-sizing: border-box; outline: none; transition: border-color 0.3s; }
+        .search-box:focus { border-color: #6a1b9a; }
+        
+        .results { list-style: none; padding: 0; margin: 5px 0 0 0; max-height: 250px; overflow-y: auto; border: 1px solid #eee; border-radius: 0 0 12px 12px; display: none; background: white; position: absolute; width: 100%; z-index: 10; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .results li { padding: 12px 16px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .results li:hover { background-color: #f3e5f5; }
+        .results li:last-child { border-bottom: none; }
+        .results li span.pts { font-weight: bold; color: #fff; background: #6a1b9a; padding: 4px 8px; border-radius: 6px; font-size: 0.9em; min-width: 30px; text-align: center; }
+        .results li small { color: #777; font-size: 0.85em; display: block; margin-top: 2px; }
+
+        /* Lista de Hoje */
+        .today-list { margin-top: 30px; }
+        .today-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; }
+        .today-header h3 { margin: 0; color: #444; }
+        .btn-clear { font-size: 0.8em; color: #f44336; background: none; border: none; cursor: pointer; text-decoration: underline; }
+
+        .today-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: center; animation: fadeIn 0.3s; }
+        .btn-delete { background: #ffebee; border: none; color: #c62828; cursor: pointer; font-size: 1.2em; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-left: 10px; transition: background 0.2s; }
+        .btn-delete:hover { background: #ffcdd2; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .loading { text-align: center; padding: 20px; color: #666; font-style: italic; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Controle de Pontos</h1>
+    <p class="subtitle">Dr. Flavio | Meta Diária: 380</p>
+
+    <div class="score-board">
+        <div class="score-meta">Consumido Hoje</div>
+        <div class="score-big" id="pontosHoje">0</div>
+        <div class="score-meta">Restante: <strong id="pontosRestante" style="color:#333">380</strong></div>
+        
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+    </div>
+
+    <div class="search-wrapper">
+        <input type="text" id="searchInput" class="search-box" placeholder="🔍 O que você comeu?" autocomplete="off">
+        <div id="loadingMsg" style="display:none; font-size: 0.8em; color: #666; padding: 5px;">Carregando tabela...</div>
+        <ul id="resultsList" class="results"></ul>
+    </div>
+
+    <div class="today-list">
+        <div class="today-header">
+            <h3>Histórico do Dia</h3>
+            <button class="btn-clear" onclick="resetarDia()">Limpar Dia</button>
+        </div>
+        <div id="historicoList">
+            </div>
+    </div>
+</div>
+
+<script>
+    // Configurações
+    const META_DIARIA = 380;
+    const STORAGE_KEY = 'dieta_flavio_history';
+    let tabelaAlimentos = [];
+
+    // Elementos DOM
+    const searchInput = document.getElementById('searchInput');
+    const resultsList = document.getElementById('resultsList');
+    const loadingMsg = document.getElementById('loadingMsg');
+
+    // --- INICIALIZAÇÃO ---
+    window.onload = async () => {
+        await carregarTabelaJSON();
+        carregarHoje();
+    };
+
+    // 1. Carregar JSON (Agora via fetch local no GitHub Pages)
+    async function carregarTabelaJSON() {
+        try {
+            loadingMsg.style.display = 'block';
+            const response = await fetch('tabela_pontos.json');
+            if (!response.ok) throw new Error("Erro ao carregar JSON");
+            
+            const dados = await response.json();
+            
+            // "Achata" o JSON para facilitar a busca
+            tabelaAlimentos = [];
+            dados.forEach(categoria => {
+                if (categoria.itens) {
+                    categoria.itens.forEach(item => {
+                        tabelaAlimentos.push({
+                            ...item,
+                            categoria: categoria.categoria,
+                            // Cria um campo de busca normalizado (sem acentos, minúsculo)
+                            busca: item.nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                        });
+                    });
+                }
+            });
+            loadingMsg.style.display = 'none';
+            console.log(`Tabela carregada com ${tabelaAlimentos.length} alimentos.`);
+        } catch (error) {
+            loadingMsg.innerText = "Erro ao carregar tabela de pontos. Verifique se o arquivo tabela_pontos.json está na mesma pasta.";
+            loadingMsg.style.color = "red";
+            console.error(error);
+        }
+    }
+
+    // --- LÓGICA DE BANCO DE DADOS (LOCALSTORAGE) ---
+    
+    function getHistorico() {
+        const data = localStorage.getItem(STORAGE_KEY);
+        return data ? JSON.parse(data) : [];
+    }
+
+    function saveHistorico(lista) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(lista));
+    }
+
+    function adicionarItem(item) {
+        const historico = getHistorico();
+        const hoje = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
+        const novoItem = {
+            id: Date.now(), // Timestamp único
+            data: hoje,
+            nome: item.nome,
+            pontos: isNaN(item.pontos) ? 0 : parseInt(item.pontos), // Trata "PROIBIDO" como 0 ou bloqueia se quiser
+            unidade: item.unidade,
+            categoria: item.categoria
+        };
+
+        historico.push(novoItem);
+        saveHistorico(historico);
+        
+        // Limpa UI
+        searchInput.value = '';
+        resultsList.style.display = 'none';
+        carregarHoje();
+    }
+
+    function removerItem(id) {
+        if(!confirm('Tem certeza que quer remover este item?')) return;
+        
+        let historico = getHistorico();
+        historico = historico.filter(item => item.id !== id);
+        saveHistorico(historico);
+        carregarHoje();
+    }
+
+    function resetarDia() {
+        if(!confirm('Zerar todo o histórico de HOJE?')) return;
+        
+        const hoje = new Date().toISOString().split('T')[0];
+        let historico = getHistorico();
+        // Mantém apenas o que NÃO é de hoje
+        historico = historico.filter(item => item.data !== hoje);
+        
+        saveHistorico(historico);
+        carregarHoje();
+    }
+
+    // --- INTERFACE ---
+
+    // Busca Inteligente
+    searchInput.addEventListener('input', (e) => {
+        const termo = e.target.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        
+        if (termo.length < 2) {
+            resultsList.style.display = 'none';
+            return;
+        }
+
+        // Filtra
+        const resultados = tabelaAlimentos.filter(item => item.busca.includes(termo)).slice(0, 10); // Limita a 10 resultados
+
+        renderResults(resultados);
+    });
+
+    function renderResults(itens) {
+        resultsList.innerHTML = '';
+        if (itens.length === 0) {
+            const li = document.createElement('li');
+            li.innerHTML = '<span style="color:#999">Nenhum alimento encontrado...</span>';
+            resultsList.appendChild(li);
+        } else {
+            itens.forEach(item => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <div>
+                        <strong>${item.nome}</strong>
+                        <small>${item.categoria} - ${item.unidade}</small>
+                    </div>
+                    <span class="pts">${item.pontos}</span>
+                `;
+                li.onclick = () => adicionarItem(item);
+                resultsList.appendChild(li);
+            });
+        }
+        resultsList.style.display = 'block';
+    }
+
+    // Renderiza o Dashboard
+    function carregarHoje() {
+        const historico = getHistorico();
+        const hoje = new Date().toISOString().split('T')[0];
+        
+        const itensHoje = historico.filter(item => item.data === hoje);
+        const totalPontos = itensHoje.reduce((acc, item) => acc + item.pontos, 0);
+        
+        // Atualiza Placar
+        const restante = META_DIARIA - totalPontos;
+        
+        // Animação numérica simples
+        document.getElementById('pontosHoje').innerText = totalPontos;
+        const elRestante = document.getElementById('pontosRestante');
+        elRestante.innerText = restante;
+        elRestante.style.color = restante < 0 ? '#f44336' : '#333';
+
+        // Atualiza Barra
+        const bar = document.getElementById('progressBar');
+        const porcentagem = Math.min((totalPontos / META_DIARIA) * 100, 100);
+        bar.style.width = `${porcentagem}%`;
+        
+        bar.className = 'progress-bar'; // reset
+        if(porcentagem > 80) bar.classList.add('warning');
+        if(porcentagem >= 100) bar.classList.add('danger');
+
+        // Atualiza Lista
+        const listaDiv = document.getElementById('historicoList');
+        listaDiv.innerHTML = '';
+        
+        if (itensHoje.length === 0) {
+            listaDiv.innerHTML = '<div class="loading">Nada registrado hoje. Vamos comer?</div>';
+            return;
+        }
+
+        itensHoje.reverse().forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'today-item';
+            div.innerHTML = `
+                <div>
+                    <strong>${item.nome}</strong> <span style="color:#666; font-size:0.9em">(${item.pontos} pts)</span><br>
+                    <small style="color:#999">${item.unidade}</small>
+                </div>
+                <button class="btn-delete" onclick="removerItem(${item.id})">✕</button>
+            `;
+            listaDiv.appendChild(div);
+        });
+    }
+
+    // Fechar busca se clicar fora
+    document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !resultsList.contains(e.target)) {
+            resultsList.style.display = 'none';
+        }
+    });
+
+</script>
+
+</body>
+</html>
