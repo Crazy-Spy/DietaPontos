@@ -7,9 +7,6 @@
     
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🥗</text></svg>">
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-
     <style>
         :root { --primary: #6a1b9a; --bg: #f4f4f9; --white: #ffffff; --text: #333; --gray: #888; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg); margin: 0; padding: 20px; color: var(--text); padding-bottom: 80px; }
@@ -23,19 +20,6 @@
         .date-input { border: 1px solid #ddd; padding: 8px; border-radius: 6px; font-family: inherit; color: var(--primary); font-weight: bold; flex-grow: 1; }
         .meta-editable { background: transparent; border: none; font-size: 1.2em; font-weight: bold; color: var(--primary); width: 50px; text-align: right; border-bottom: 1px dashed var(--primary); }
         
-        /* Botão de PDF */
-        .btn-print {
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 1.2em;
-            transition: 0.2s;
-        }
-        .btn-print:hover { background-color: #4a148c; transform: scale(1.05); }
-
         /* Progresso */
         .progress-wrapper { margin-top: 15px; }
         .progress-container { width: 100%; background-color: #e0e0e0; border-radius: 20px; height: 12px; overflow: hidden; }
@@ -98,7 +82,6 @@
         
         <div class="controls-container">
             <input type="date" id="inputData" class="date-input" onchange="mudarData(this.value)">
-            <button class="btn-print" onclick="gerarRelatorioPDF()" title="Gerar Relatório da Semana">🖨️</button>
             <div style="display:flex; align-items:center; gap:5px;">
                 <span style="font-size:0.8em; font-weight:bold; color:var(--primary)">META:</span>
                 <input type="number" id="inputMeta" class="meta-editable" value="380" onchange="atualizarMeta(this.value)">
@@ -240,32 +223,49 @@
             });
             document.getElementById('loadingMsg').style.display = 'none';
         } catch (e) {
-            console.warn("Tabela JSON não encontrada, usando vazia.");
-            document.getElementById('loadingMsg').style.display = 'none';
+            alert("Erro ao carregar tabela.");
         }
     }
 
+    // --- LÓGICA DE CÁLCULO DE UNIDADES (O PULO DO GATO) ---
     function extrairQuantidadeBase(textoUnidade) {
+        // Tenta achar fração "1/2"
         const fracao = textoUnidade.match(/^(\d+)\/(\d+)/);
-        if (fracao) return parseFloat(fracao[1]) / parseFloat(fracao[2]);
+        if (fracao) {
+            return parseFloat(fracao[1]) / parseFloat(fracao[2]);
+        }
+        
+        // Tenta achar número inteiro no começo "3 unidades", "100g"
         const numero = textoUnidade.match(/^(\d+)/);
-        if (numero) return parseFloat(numero[1]);
+        if (numero) {
+            return parseFloat(numero[1]);
+        }
+        
+        // Se não achar nada (ex: "Colher de sopa", "Unidade"), assume 1
         return 1;
     }
 
     function abrirModalRefeicao(item) {
         itemSelecionadoTemp = item;
-        pontosBase = typeof item.pontos === 'number' ? item.pontos : 0;
+        
+        // Configura Calculadora
+        pontosBase = typeof item.pontos === 'number' ? item.pontos : 0; // Se for "PROIBIDO", vira 0
         fatorBase = extrairQuantidadeBase(item.unidade);
+        
+        // Texto da unidade limpo (tira o numero da frente pra exibir na label)
+        // ex: "3 unidades" vira "unidades"
         let labelUnidade = item.unidade.replace(/^[\d\/]+\s*/, '');
         if (labelUnidade.length < 2) labelUnidade = "Porção(ões)";
 
         document.getElementById('modalTitle').innerText = item.nome;
         document.getElementById('modalUnitDesc').innerText = `Base: ${item.unidade} = ${item.pontos} pts`;
+        
         document.getElementById('labelUnidadeCalc').innerText = labelUnidade;
         
+        // Seta o valor inicial igual à base (ex: 3)
         const inputQtd = document.getElementById('inputQtd');
         inputQtd.value = fatorBase;
+        
         recalcularPontos();
         
         modal.style.display = 'flex';
@@ -275,11 +275,17 @@
     function recalcularPontos() {
         const inputQtd = document.getElementById('inputQtd');
         const qtdInserida = parseFloat(inputQtd.value);
+        
         if (isNaN(qtdInserida) || qtdInserida < 0) {
             document.getElementById('displayPontosCalc').innerText = "---";
             return;
         }
+
+        // REGRA DE TRÊS: (Inserido / Base) * PontosBase
+        // Ex: Base 3 unid (25pts). Comi 5. (5/3)*25 = 41.6
         const totalCalculado = (qtdInserida / fatorBase) * pontosBase;
+        
+        // Arredonda
         document.getElementById('displayPontosCalc').innerText = Math.round(totalCalculado) + " pontos";
     }
 
@@ -290,19 +296,23 @@
 
     function confirmarRefeicao(tipoRefeicao) {
         if (!itemSelecionadoTemp) return;
+
         const qtdInserida = parseFloat(document.getElementById('inputQtd').value) || fatorBase;
         const pontosFinais = Math.round((qtdInserida / fatorBase) * pontosBase);
 
         const historico = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        
+        // Cria descrição personalizada ex: "Bolacha (5 unidades)"
+        // Pega só o texto da unidade (ex: "unid.")
         let sufixoUnidade = itemSelecionadoTemp.unidade.replace(/^[\d\/]+\s*/, '');
-        if(sufixoUnidade === itemSelecionadoTemp.unidade) sufixoUnidade = ""; 
+        if(sufixoUnidade === itemSelecionadoTemp.unidade) sufixoUnidade = ""; // Se nao tinha numero, nao duplica
 
         const novoRegistro = {
             id: Date.now(),
             data: dataSelecionada,
             nome: itemSelecionadoTemp.nome,
             pontos: pontosFinais,
-            unidade: `${qtdInserida} ${sufixoUnidade} (calc)`,
+            unidade: `${qtdInserida} ${sufixoUnidade} (calc)`, // Marca que foi calculado
             refeicao: tipoRefeicao
         };
 
@@ -325,6 +335,7 @@
         renderizarHistoricoGeral();
     }
 
+    // --- RENDERIZAÇÃO ---
     function renderizarDiario() {
         const historico = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
         const itensDoDia = historico.filter(i => i.data === dataSelecionada);
@@ -384,7 +395,7 @@
         historico.forEach(i => { resumo[i.data] = (resumo[i.data] || 0) + i.pontos; });
         
         Object.keys(resumo).sort().reverse().forEach(d => {
-            if(d === dataSelecionada) return;
+            if(d === dataSelecionada) return; // Nao mostra o dia atual na lista
             const p = d.split('-');
             const li = document.createElement('li');
             li.className = 'history-item';
@@ -394,125 +405,7 @@
         });
     }
 
-    // --- NOVA FUNÇÃO DE GERAR PDF ---
-    function gerarRelatorioPDF() {
-        // Usa a data selecionada no input principal como base
-        const inputDateVal = document.getElementById('inputData').value;
-        if (!inputDateVal) { alert("Selecione uma data para começar!"); return; }
-
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('l', 'mm', 'a4');
-
-        // Configuração de datas
-        const [ano, mes, dia] = inputDateVal.split('-').map(Number);
-        const dataBase = new Date(ano, mes - 1, dia);
-        
-        // Arrays para guardar os valores calculados
-        const diasNomes = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
-        
-        // Pega o banco de dados inteiro
-        const historicoCompleto = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-
-        // Prepara as colunas (Datas) e os dados
-        const headerColunas = ["Refeição / Dia"];
-        const totaisRefeicoes = {
-            'Manhã': [], 'Almoço': [], 'Jantar': [], 'Lanche': [], 'TotalDia': []
-        };
-        
-        // Loop de 7 dias a partir da data selecionada
-        const dataFinal = new Date(dataBase);
-
-        for (let i = 0; i < 7; i++) {
-            // Data atual do loop
-            const dataAtual = new Date(dataBase);
-            dataAtual.setDate(dataBase.getDate() + i);
-            
-            // Formatação YYYY-MM-DD para buscar no DB
-            const anoStr = dataAtual.getFullYear();
-            const mesStr = String(dataAtual.getMonth() + 1).padStart(2, '0');
-            const diaStr = String(dataAtual.getDate()).padStart(2, '0');
-            const dataKey = `${anoStr}-${mesStr}-${diaStr}`;
-            
-            // Formatação DD/MM para cabeçalho
-            const dataCabecalho = `${diaStr}/${mesStr}`;
-
-            // Pega o nome do dia da semana (getDay: 0=Dom, 1=Seg... precisa ajustar pro array)
-            // Se quiser forçar que a data inicial seja "Segunda", ok. 
-            // Mas aqui estou pegando o nome real do dia da data.
-            let diaSemanaIndex = dataAtual.getDay() - 1; 
-            if (diaSemanaIndex < 0) diaSemanaIndex = 6; // Domingo vira 6
-
-            headerColunas.push(`${diasNomes[diaSemanaIndex] || 'Dia'}\n${dataCabecalho}`);
-
-            // Filtra itens desse dia
-            const itensDoDia = historicoCompleto.filter(x => x.data === dataKey);
-
-            // Soma por refeição
-            const m = itensDoDia.filter(x => x.refeicao === 'Manhã').reduce((a, b) => a + b.pontos, 0);
-            const a = itensDoDia.filter(x => x.refeicao === 'Almoço').reduce((a, b) => a + b.pontos, 0);
-            const j = itensDoDia.filter(x => x.refeicao === 'Jantar').reduce((a, b) => a + b.pontos, 0);
-            const l = itensDoDia.filter(x => x.refeicao === 'Lanche').reduce((a, b) => a + b.pontos, 0); // Todo o resto pode cair aqui se quiser
-
-            totaisRefeicoes['Manhã'].push(m);
-            totaisRefeicoes['Almoço'].push(a);
-            totaisRefeicoes['Jantar'].push(j);
-            totaisRefeicoes['Lanche'].push(l);
-            totaisRefeicoes['TotalDia'].push(m + a + j + l);
-            
-            if (i === 6) dataFinal.setDate(dataBase.getDate() + 6); // Atualiza data final pra label
-        }
-
-        // --- GERAÇÃO VISUAL DO PDF ---
-        doc.setFontSize(14);
-        doc.text("Drª Janine Malucelli Favorito - Endocrinologista / CRM 12449", 14, 15);
-        
-        doc.setFontSize(22);
-        doc.setFont("helvetica", "bold");
-        doc.text("Diário Alimentar - Resumo de Pontos", 14, 25);
-        
-        const formatarDataBR = (d) => d.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'});
-        doc.setFontSize(12);
-        doc.setFont("helvetica", "normal");
-        doc.text(`Início da Semana: ${formatarDataBR(dataBase)}`, 14, 32);
-
-        const bodyData = [
-            [{ content: "Manhã", styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, "", "", "", "", "", "", ""], 
-            [{ content: "Total Manhã", styles: { fontStyle: 'bold' } }, ...totaisRefeicoes['Manhã']],
-
-            [{ content: "Almoço", styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, "", "", "", "", "", "", ""],
-            [{ content: "Total Almoço", styles: { fontStyle: 'bold' } }, ...totaisRefeicoes['Almoço']],
-
-            [{ content: "Jantar", styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, "", "", "", "", "", "", ""],
-            [{ content: "Total Jantar", styles: { fontStyle: 'bold' } }, ...totaisRefeicoes['Jantar']],
-
-            [{ content: "Lanche", styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, "", "", "", "", "", "", ""],
-            [{ content: "Total Lanche", styles: { fontStyle: 'bold' } }, ...totaisRefeicoes['Lanche']],
-
-            [
-                { content: "TOTAL DIA", styles: { fontStyle: 'bold', fillColor: [200, 200, 200], textColor: [0, 0, 0] } },
-                ...totaisRefeicoes['TotalDia'].map(total => ({ content: total, styles: { fontStyle: 'bold', fillColor: [220, 220, 220] } }))
-            ]
-        ];
-
-        doc.autoTable({
-            startY: 38,
-            head: [headerColunas],
-            body: bodyData,
-            theme: 'grid',
-            headStyles: {
-                fillColor: [40, 40, 40],
-                textColor: [255, 255, 255],
-                halign: 'center',
-                valign: 'middle',
-                minCellHeight: 15
-            },
-            bodyStyles: { halign: 'center', valign: 'middle' },
-            columnStyles: { 0: { cellWidth: 35, halign: 'left' } }
-        });
-
-        doc.save(`relatorio_${inputDateVal}.pdf`);
-    }
-
+    // Busca
     searchInput.addEventListener('input', (e) => {
         const t = e.target.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         if (t.length < 2) { resultsList.style.display = 'none'; return; }
