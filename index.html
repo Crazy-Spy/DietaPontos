@@ -39,13 +39,11 @@
         }
         .btn-icon:hover { background-color: #4a148c; transform: scale(1.05); }
 
-        .btn-create-recipe {
-            background-color: #ff9800; /* Laranja pra destacar */
-            font-size: 1em;
-            font-weight: bold;
-            gap: 5px;
-        }
+        .btn-create-recipe { background-color: #ff9800; font-size: 1em; font-weight: bold; gap: 5px; }
         .btn-create-recipe:hover { background-color: #f57c00; }
+        
+        .btn-manage-recipes { background-color: #00897b; font-size: 1em; font-weight: bold; gap: 5px; }
+        .btn-manage-recipes:hover { background-color: #00695c; }
 
         /* Progresso */
         .progress-wrapper { margin-top: 15px; }
@@ -76,7 +74,6 @@
             display: inline-block;
         }
         
-        /* Tag especial para Receitas criadas */
         .search-cat-label.is-recipe { background: #fff3e0; color: #e65100; border: 1px solid #ffe0b2; }
 
         /* Diário */
@@ -123,16 +120,16 @@
         .total-dia-card { background: var(--primary); color: white; padding: 15px; border-radius: 12px; margin-top: 20px; text-align: center; box-shadow: 0 4px 15px rgba(106, 27, 154, 0.3); }
         .total-dia-val { font-size: 2em; font-weight: bold; }
         
-        /* Estilos do Histórico */
+        /* Estilos do Histórico e Listas */
         .history-section { margin-top: 40px; border-top: 2px solid #eee; padding-top: 20px; }
-        .history-item { background: white; margin-bottom: 10px; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #eee; cursor: pointer; transition: transform 0.1s; }
-        .history-item:active { transform: scale(0.98); background: #f9f9f9; }
+        .history-item, .recipe-list-item { background: white; margin-bottom: 10px; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #eee; cursor: pointer; transition: transform 0.1s; }
+        .history-item:active, .recipe-list-item:active { transform: scale(0.98); background: #f9f9f9; }
         
         .history-pts { font-weight: bold; color: var(--primary); background: #f3e5f5; padding: 5px 12px; border-radius: 20px; font-size: 0.9em; display: flex; align-items: center; gap: 6px; }
         .history-pts.status-success { background-color: var(--success); color: white; }
         .history-pts.status-fail { background-color: var(--danger); color: white; }
 
-        /* Estilos Específicos do Criador de Receitas */
+        /* Estilos Criador de Receitas */
         .recipe-creator-box { text-align: left; }
         .recipe-input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 1em; margin-bottom: 10px; }
         .recipe-ingredients-list { list-style: none; padding: 0; margin: 10px 0; border: 1px solid #eee; border-radius: 8px; max-height: 200px; overflow-y: auto; }
@@ -142,11 +139,16 @@
         .recipe-ing-qty { width: 40px; text-align: center; padding: 2px; border: 1px solid #ddd; border-radius: 4px; }
         .recipe-total { text-align: right; font-weight: bold; color: var(--primary); font-size: 1.2em; margin-top: 10px; border-top: 2px solid #eee; padding-top: 10px; }
         
-        /* Busca dentro do modal de receitas */
         .recipe-search-container { position: relative; }
         .recipe-search-results { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-radius: 6px; max-height: 150px; overflow-y: auto; z-index: 2000; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.1); list-style: none; padding: 0; margin: 0;}
         .recipe-search-results li { padding: 8px; border-bottom: 1px solid #eee; cursor: pointer; font-size: 0.9em; }
         .recipe-search-results li:hover { background: #f3e5f5; }
+
+        /* Lista de Gerenciamento de Receitas */
+        .recipe-manage-list { list-style: none; padding: 0; margin: 0; text-align: left; }
+        .recipe-manage-actions { display: flex; gap: 10px; }
+        .btn-action-small { background: none; border: 1px solid #ddd; border-radius: 4px; padding: 5px 8px; cursor: pointer; font-size: 1em; }
+        .btn-action-small:hover { background: #eee; }
 
     </style>
 </head>
@@ -162,6 +164,9 @@
             <div style="display:flex; gap:10px;">
                 <button class="btn-icon btn-create-recipe" onclick="abrirCriadorReceita()" title="Criar Novo Prato">
                     <span>➕</span> Prato
+                </button>
+                <button class="btn-icon btn-manage-recipes" onclick="abrirGerenciadorReceitas()" title="Minhas Receitas">
+                    <span>📖</span>
                 </button>
                 <button class="btn-icon" onclick="abrirModalPDF()" title="Imprimir Relatório">🖨️</button>
             </div>
@@ -251,9 +256,7 @@
 <div class="modal-overlay" id="pdfModal">
     <div class="modal-content">
         <h3 class="modal-title">Gerar Relatório</h3>
-        <p style="color:#666; font-size:0.9em; margin-bottom:15px;">
-            Escolha a segunda-feira inicial.
-        </p>
+        <p style="color:#666; font-size:0.9em; margin-bottom:15px;">Escolha a segunda-feira inicial.</p>
         <div style="text-align:left; margin-bottom:15px;">
             <label style="font-weight:bold; color:#444; font-size:0.9em;">Início:</label>
             <input type="date" id="pdfStartDate" class="date-input" style="width:100%; box-sizing:border-box; margin-top:5px;" onchange="atualizarTextoDataPDF()">
@@ -266,7 +269,7 @@
 
 <div class="modal-overlay" id="recipeModal">
     <div class="modal-content recipe-creator-box">
-        <h3 class="modal-title" style="text-align:center;">Criar Novo Prato</h3>
+        <h3 class="modal-title" style="text-align:center;" id="recipeModalTitle">Criar Novo Prato</h3>
         
         <label style="font-size:0.9em; font-weight:bold;">Nome do Prato:</label>
         <input type="text" id="recipeName" class="recipe-input" placeholder="Ex: Pão com Ovo">
@@ -281,40 +284,49 @@
             <li style="padding:10px; text-align:center; color:#999; font-size:0.9em;" id="emptyMsg">Nenhum ingrediente ainda</li>
         </ul>
 
-        <div class="recipe-total">
-            Total: <span id="recipeTotalPoints">0</span> pts
-        </div>
+        <div class="recipe-total">Total: <span id="recipeTotalPoints">0</span> pts</div>
 
         <button class="btn-action-primary" onclick="salvarReceita()">💾 Salvar Prato</button>
         <button class="btn-cancel" onclick="fecharModal('recipeModal')">Cancelar</button>
     </div>
 </div>
 
+<div class="modal-overlay" id="manageRecipesModal">
+    <div class="modal-content">
+        <h3 class="modal-title">Minhas Receitas</h3>
+        <p style="color:#666; font-size:0.9em; margin-bottom:15px;">Seus pratos personalizados</p>
+        
+        <div style="max-height: 300px; overflow-y: auto;">
+            <ul id="manageRecipesList" class="recipe-manage-list">
+                </ul>
+        </div>
+        
+        <button class="btn-cancel" onclick="fecharModal('manageRecipesModal')">Fechar</button>
+    </div>
+</div>
+
 <script>
     const STORAGE_KEY = 'dieta_flavio_db';
     const PREF_META_KEY = 'dieta_flavio_meta';
-    const STORAGE_RECIPES_KEY = 'dieta_flavio_receitas'; // Novo storage para receitas
+    const STORAGE_RECIPES_KEY = 'dieta_flavio_receitas';
     
-    // Configura a META_PADRAO baseada no storage
     const META_PADRAO = parseInt(localStorage.getItem(PREF_META_KEY)) || 380;
     
     let tabelaAlimentos = [];
     let itemSelecionadoTemp = null;
     let metaAtual = META_PADRAO;
     
-    // Data
     const hoje = new Date();
     const hojeLocal = new Date(hoje.getTime() - (hoje.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
     let dataSelecionada = hojeLocal;
     
-    // Vars calculadora
     let fatorBase = 1;
     let pontosBase = 0;
 
     // Vars Criador de Receitas
-    let ingredientesEmEdicao = []; // Lista temporária [ {nome, unidade, qtd, pontosUnit, pontosTotal} ]
+    let ingredientesEmEdicao = [];
+    let idReceitaEmEdicao = null; // Controla se estamos criando ou editando
 
-    // Elementos
     const searchInput = document.getElementById('searchInput');
     const resultsList = document.getElementById('resultsList');
     const inputData = document.getElementById('inputData');
@@ -322,7 +334,7 @@
     window.onload = async () => {
         inputData.value = dataSelecionada;
         document.getElementById('inputMeta').value = metaAtual;
-        await carregarTabelaJSON(); // Carrega JSON + Receitas
+        await carregarTabelaJSON();
         renderizarDiario();
         renderizarHistoricoGeral();
     };
@@ -350,18 +362,14 @@
         renderizarHistoricoGeral();
     }
 
-    // --- CARREGAMENTO DE DADOS (JSON + STORAGE) ---
+    // --- CARREGAMENTO ---
     async function carregarTabelaJSON() {
         try {
             document.getElementById('loadingMsg').style.display = 'block';
-            
-            // 1. Carrega o JSON Oficial (com cache buster pra garantir atualização)
             const res = await fetch('tabela_pontos.json?v=' + Date.now());
             const dados = await res.json();
-            
             tabelaAlimentos = [];
             
-            // Adiciona itens do JSON
             dados.forEach(cat => {
                 if (cat.itens) {
                     cat.itens.forEach(item => {
@@ -376,36 +384,31 @@
                 }
             });
 
-            // 2. Carrega as Receitas do Usuário (LocalStorage) e mistura na lista
             carregarReceitasDoStorage();
-
             document.getElementById('loadingMsg').style.display = 'none';
         } catch (e) {
             console.warn(e);
-            document.getElementById('loadingMsg').innerText = "Erro no arquivo JSON! Verifique.";
+            document.getElementById('loadingMsg').innerText = "Erro no arquivo JSON!";
         }
     }
 
     function carregarReceitasDoStorage() {
         const receitasSalvas = JSON.parse(localStorage.getItem(STORAGE_RECIPES_KEY) || '[]');
-        
         receitasSalvas.forEach(receita => {
-            // Cria um objeto compatível com a tabela de alimentos
             const itemReceita = {
-                idReceita: receita.id, // ID único para poder apagar depois
+                idReceita: receita.id,
                 nome: receita.nome,
-                unidade: "1 receita", // Padrão
+                unidade: "1 receita",
                 pontos: receita.totalPontos,
-                cat: "Meus Pratos", // Categoria especial
+                cat: "Meus Pratos",
                 busca: (receita.nome + " meus pratos receitas").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""),
                 isRecipe: true,
-                ingredientes: receita.itens // Guardamos pra referência se precisar
+                ingredientes: receita.itens
             };
             tabelaAlimentos.push(itemReceita);
         });
     }
 
-    // --- LÓGICA DE UNIDADES ---
     function extrairQuantidadeBase(textoUnidade) {
         const fracao = textoUnidade.match(/^(\d+)\/(\d+)/);
         if (fracao) return parseFloat(fracao[1]) / parseFloat(fracao[2]);
@@ -414,13 +417,10 @@
         return 1;
     }
 
-    // --- MODAL DE LANÇAMENTO (DIÁRIO) ---
     function abrirModalRefeicao(item) {
         itemSelecionadoTemp = item;
-        
         pontosBase = typeof item.pontos === 'number' ? item.pontos : 0;
         fatorBase = extrairQuantidadeBase(item.unidade);
-        
         let labelUnidade = item.unidade.replace(/^[\d\/]+\s*/, '');
         if (labelUnidade.length < 2) labelUnidade = "Porção(ões)";
 
@@ -430,16 +430,11 @@
         
         const inputQtd = document.getElementById('inputQtd');
         inputQtd.value = fatorBase;
-        
         recalcularPontos();
         
-        // Exibe botão de apagar SE for uma receita criada
         const btnDel = document.getElementById('btnDeleteRecipe');
-        if (item.isRecipe) {
-            btnDel.style.display = 'block';
-        } else {
-            btnDel.style.display = 'none';
-        }
+        if (item.isRecipe) btnDel.style.display = 'block';
+        else btnDel.style.display = 'none';
 
         document.getElementById('mealModal').style.display = 'flex';
         searchInput.blur();
@@ -498,35 +493,88 @@
         renderizarHistoricoGeral();
     }
 
-    // --- CRIADOR DE RECEITAS (CORRIGIDO) ---
+    // --- GERENCIADOR DE RECEITAS (NOVO MODAL DE LISTA) ---
+
+    function abrirGerenciadorReceitas() {
+        const receitas = JSON.parse(localStorage.getItem(STORAGE_RECIPES_KEY) || '[]');
+        const lista = document.getElementById('manageRecipesList');
+        lista.innerHTML = '';
+
+        if(receitas.length === 0) {
+            lista.innerHTML = '<li style="text-align:center; color:#999; padding:20px;">Nenhuma receita criada.</li>';
+        } else {
+            receitas.forEach(rec => {
+                const li = document.createElement('li');
+                li.className = 'recipe-list-item';
+                li.innerHTML = `
+                    <div>
+                        <b style="font-size:1.1em; color:var(--primary);">${rec.nome}</b><br>
+                        <small style="color:#666">${rec.totalPontos} pontos</small>
+                    </div>
+                    <div class="recipe-manage-actions">
+                        <button class="btn-action-small" onclick="editarReceita(${rec.id})" title="Editar">✏️</button>
+                        <button class="btn-action-small" onclick="deletarReceitaDireto(${rec.id})" title="Apagar" style="color:#f44336; border-color:#f44336;">🗑️</button>
+                    </div>
+                `;
+                lista.appendChild(li);
+            });
+        }
+        document.getElementById('manageRecipesModal').style.display = 'flex';
+    }
+
+    function deletarReceitaDireto(id) {
+        if(!confirm("Apagar esta receita para sempre?")) return;
+        let receitas = JSON.parse(localStorage.getItem(STORAGE_RECIPES_KEY) || '[]');
+        receitas = receitas.filter(r => r.id !== id);
+        localStorage.setItem(STORAGE_RECIPES_KEY, JSON.stringify(receitas));
+        
+        // Recarrega
+        carregarTabelaJSON();
+        abrirGerenciadorReceitas(); // Atualiza a lista
+    }
+
+    function editarReceita(id) {
+        const receitas = JSON.parse(localStorage.getItem(STORAGE_RECIPES_KEY) || '[]');
+        const rec = receitas.find(r => r.id === id);
+        if(!rec) return;
+
+        // Fecha o gerenciador e abre o criador
+        fecharModal('manageRecipesModal');
+        
+        // Preenche o criador
+        document.getElementById('recipeModalTitle').innerText = "Editar Prato";
+        document.getElementById('recipeName').value = rec.nome;
+        ingredientesEmEdicao = rec.itens || [];
+        idReceitaEmEdicao = id; // Marca que estamos editando
+        
+        renderizarListaIngredientesReceita();
+        document.getElementById('recipeModal').style.display = 'flex';
+    }
+
+    // --- CRIADOR DE RECEITAS (LÓGICA) ---
 
     function abrirCriadorReceita() {
-        // Reseta campos
+        document.getElementById('recipeModalTitle').innerText = "Criar Novo Prato";
         document.getElementById('recipeName').value = '';
         document.getElementById('recipeSearchInput').value = '';
         document.getElementById('recipeTotalPoints').innerText = '0';
         ingredientesEmEdicao = [];
+        idReceitaEmEdicao = null; // Novo prato
         renderizarListaIngredientesReceita();
-        
         document.getElementById('recipeModal').style.display = 'flex';
     }
 
-    // Busca interna do modal de receitas
     const recipeSearchInput = document.getElementById('recipeSearchInput');
     const recipeResultsList = document.getElementById('recipeResultsList');
 
     recipeSearchInput.addEventListener('input', (e) => {
         const t = e.target.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         if (t.length < 2) { recipeResultsList.style.display = 'none'; return; }
-        
-        // Permite buscar qualquer coisa, inclusive outras receitas! (Inception de comida)
         const res = tabelaAlimentos.filter(i => i.busca.includes(t)).slice(0, 50);
-        
         recipeResultsList.innerHTML = '';
         res.forEach(item => {
             const li = document.createElement('li');
             li.innerHTML = `<b>${item.nome}</b> <span style="color:#666; font-size:0.8em">(${item.pontos}pts / ${item.unidade})</span>`;
-            
             li.onclick = () => {
                 adicionarIngredienteNaReceita(item);
                 recipeSearchInput.value = '';
@@ -538,7 +586,6 @@
         recipeResultsList.style.display = res.length ? 'block' : 'none';
     });
 
-    // Esconde a lista se clicar fora
     document.addEventListener('click', (e) => {
         if (!recipeSearchInput.contains(e.target) && !recipeResultsList.contains(e.target)) {
             recipeResultsList.style.display = 'none';
@@ -546,24 +593,20 @@
     });
 
     function adicionarIngredienteNaReceita(item) {
-        // Ao adicionar, assume Qtd = Base (ex: 1 unidade)
         const base = extrairQuantidadeBase(item.unidade);
-        
         ingredientesEmEdicao.push({
             nome: item.nome,
             unidadeOriginal: item.unidade,
             fatorBase: base,
             pontosBase: item.pontos,
-            qtd: base // Qtd inicial
+            qtd: base
         });
-        
         renderizarListaIngredientesReceita();
     }
 
     function renderizarListaIngredientesReceita() {
         const lista = document.getElementById('recipeIngredientsList');
         lista.innerHTML = '';
-        
         let totalReceita = 0;
 
         if (ingredientesEmEdicao.length === 0) {
@@ -571,14 +614,11 @@
         }
 
         ingredientesEmEdicao.forEach((ing, index) => {
-            // Calcula pontos desse ingrediente com base na qtd
             const ptsIngrediente = Math.round((ing.qtd / ing.fatorBase) * ing.pontosBase);
             totalReceita += ptsIngrediente;
 
             const li = document.createElement('li');
             li.className = 'recipe-ing-item';
-            
-            // HTML do item: Nome, Input Qtd, Pontos, Botão Remover
             li.innerHTML = `
                 <div class="recipe-ing-info">
                     <div><b>${ing.nome}</b></div>
@@ -593,7 +633,6 @@
             `;
             lista.appendChild(li);
         });
-
         document.getElementById('recipeTotalPoints').innerText = totalReceita;
     }
 
@@ -617,36 +656,44 @@
         if (!nome) { alert("Dê um nome para o prato!"); return; }
         if (ingredientesEmEdicao.length === 0) { alert("Adicione ingredientes!"); return; }
 
-        const novaReceita = {
-            id: Date.now(),
-            nome: nome,
-            totalPontos: total,
-            itens: ingredientesEmEdicao // FIX: Corrigido typo (era ingredientsEmEdicao)
-        };
+        let receitas = JSON.parse(localStorage.getItem(STORAGE_RECIPES_KEY) || '[]');
 
-        // Salva no LocalStorage
-        const receitas = JSON.parse(localStorage.getItem(STORAGE_RECIPES_KEY) || '[]');
-        receitas.push(novaReceita);
+        if (idReceitaEmEdicao) {
+            // EDITA EXISTENTE
+            const index = receitas.findIndex(r => r.id === idReceitaEmEdicao);
+            if (index !== -1) {
+                receitas[index].nome = nome;
+                receitas[index].totalPontos = total;
+                receitas[index].itens = ingredientesEmEdicao;
+            }
+        } else {
+            // CRIA NOVA
+            const novaReceita = {
+                id: Date.now(),
+                nome: nome,
+                totalPontos: total,
+                itens: ingredientesEmEdicao
+            };
+            receitas.push(novaReceita);
+        }
+
         localStorage.setItem(STORAGE_RECIPES_KEY, JSON.stringify(receitas));
-
-        // Recarrega tudo para atualizar a busca
-        carregarTabelaJSON(); 
+        carregarTabelaJSON(); // Recarrega para incluir na busca
         
         fecharModal('recipeModal');
-        alert(`Prato "${nome}" criado com sucesso! (${total} pts)`);
+        alert(`Prato "${nome}" salvo com sucesso!`);
     }
 
     function apagarReceitaCriada() {
+        // Função usada no modal de lançamento (quando encontra via busca)
         if (!itemSelecionadoTemp || !itemSelecionadoTemp.isRecipe) return;
         
         if(confirm(`Tem certeza que deseja apagar o prato "${itemSelecionadoTemp.nome}" para sempre?`)) {
             const idParaApagar = itemSelecionadoTemp.idReceita;
-            
             let receitas = JSON.parse(localStorage.getItem(STORAGE_RECIPES_KEY) || '[]');
             receitas = receitas.filter(r => r.id !== idParaApagar);
             localStorage.setItem(STORAGE_RECIPES_KEY, JSON.stringify(receitas));
             
-            // Recarrega app
             fecharModal('mealModal');
             searchInput.value = '';
             resultsList.style.display = 'none';
@@ -655,50 +702,27 @@
         }
     }
 
-    // --- RENDERIZAÇÃO DIÁRIO ---
+    // RENDER E ETC
     function renderizarDiario() {
         const historico = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
         const itensDoDia = historico.filter(i => i.data === dataSelecionada);
-
-        const grupos = {
-            'Manhã': { total: 0, el: document.getElementById('listManha'), tel: document.getElementById('totalManha') },
-            'Almoço': { total: 0, el: document.getElementById('listAlmoco'), tel: document.getElementById('totalAlmoco') },
-            'Jantar': { total: 0, el: document.getElementById('listJantar'), tel: document.getElementById('totalJantar') },
-            'Lanche': { total: 0, el: document.getElementById('listLanche'), tel: document.getElementById('totalLanche') }
-        };
-
+        const grupos = { 'Manhã': {total:0, el:document.getElementById('listManha'), tel:document.getElementById('totalManha')}, 'Almoço': {total:0, el:document.getElementById('listAlmoco'), tel:document.getElementById('totalAlmoco')}, 'Jantar': {total:0, el:document.getElementById('listJantar'), tel:document.getElementById('totalJantar')}, 'Lanche': {total:0, el:document.getElementById('listLanche'), tel:document.getElementById('totalLanche')} };
         for (let key in grupos) grupos[key].el.innerHTML = '';
         let totalDia = 0;
-
         itensDoDia.forEach(item => {
             const tipo = grupos[item.refeicao] ? item.refeicao : 'Lanche';
             grupos[tipo].total += item.pontos;
             totalDia += item.pontos;
-
             const li = document.createElement('li');
             li.className = 'meal-item';
-            li.innerHTML = `
-                <div>
-                    <strong>${item.nome}</strong>
-                    <small style="color:#666">${item.unidade}</small>
-                </div>
-                <div style="display:flex; align-items:center">
-                    <span style="font-weight:bold; color:#6a1b9a">${item.pontos}</span>
-                    <button class="btn-delete" onclick="removerItem(${item.id})">×</button>
-                </div>
-            `;
+            li.innerHTML = `<div><strong>${item.nome}</strong><small style="color:#666">${item.unidade}</small></div><div style="display:flex; align-items:center"><span style="font-weight:bold; color:#6a1b9a">${item.pontos}</span><button class="btn-delete" onclick="removerItem(${item.id})">×</button></div>`;
             grupos[tipo].el.appendChild(li);
         });
-
-        for (let key in grupos) {
-            grupos[key].tel.innerText = grupos[key].total + ' pts';
-        }
-
+        for (let key in grupos) grupos[key].tel.innerText = grupos[key].total + ' pts';
         const restante = metaAtual - totalDia;
         document.getElementById('totalConsumido').innerText = totalDia;
         document.getElementById('totalRestante').innerText = restante;
         document.getElementById('totalGeralBig').innerText = totalDia;
-
         const pct = Math.min((totalDia / metaAtual) * 100, 100);
         const bar = document.getElementById('progressBar');
         bar.style.width = `${pct}%`;
@@ -716,7 +740,6 @@
         const metaParaCalculo = metaSalvaStorage || 380;
         const resumo = {};
         historico.forEach(i => { resumo[i.data] = (resumo[i.data] || 0) + i.pontos; });
-        
         Object.keys(resumo).sort().reverse().forEach(d => {
             if(d === dataSelecionada) return; 
             const p = d.split('-');
@@ -724,7 +747,6 @@
             const sucesso = total <= metaParaCalculo;
             const statusClass = sucesso ? 'status-success' : 'status-fail';
             const icon = sucesso ? '✅' : '❌';
-
             const li = document.createElement('li');
             li.className = 'history-item';
             li.innerHTML = `<div>${p[2]}/${p[1]}/${p[0]}</div><div class="history-pts ${statusClass}"><span>${icon}</span> ${total} pts</div>`;
@@ -733,27 +755,16 @@
         });
     }
 
-    // BUSCA PRINCIPAL
     searchInput.addEventListener('input', (e) => {
         const t = e.target.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         if (t.length < 2) { resultsList.style.display = 'none'; return; }
-        
         const res = tabelaAlimentos.filter(i => i.busca.includes(t)).slice(0, 100);
-        
         resultsList.innerHTML = '';
         res.forEach(item => {
             const li = document.createElement('li');
             const catClass = item.isRecipe ? 'search-cat-label is-recipe' : 'search-cat-label';
             const catName = item.isRecipe ? '★ MEUS PRATOS' : (item.cat || 'Geral');
-
-            li.innerHTML = `
-                <div>
-                    <span class="${catClass}">${catName}</span><br>
-                    <b>${item.nome}</b><br>
-                    <small>${item.unidade}</small>
-                </div>
-                <span class="pts">${item.pontos}</span>
-            `;
+            li.innerHTML = `<div><span class="${catClass}">${catName}</span><br><b>${item.nome}</b><br><small>${item.unidade}</small></div><span class="pts">${item.pontos}</span>`;
             li.onclick = () => abrirModalRefeicao(item);
             resultsList.appendChild(li);
         });
@@ -766,7 +777,7 @@
         modals.forEach(m => { if(e.target === m) m.style.display = 'none'; });
     });
 
-    // --- PDF ---
+    // PDF
     function abrirModalPDF() {
         const partes = dataSelecionada.split('-'); 
         const dataRef = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]), 12, 0, 0);
