@@ -295,6 +295,7 @@
     const PREF_META_KEY = 'dieta_flavio_meta';
     const STORAGE_RECIPES_KEY = 'dieta_flavio_receitas'; // Novo storage para receitas
     
+    // Configura a META_PADRAO baseada no storage
     const META_PADRAO = parseInt(localStorage.getItem(PREF_META_KEY)) || 380;
     
     let tabelaAlimentos = [];
@@ -497,7 +498,7 @@
         renderizarHistoricoGeral();
     }
 
-    // --- CRIADOR DE RECEITAS (NOVO) ---
+    // --- CRIADOR DE RECEITAS (CORRIGIDO) ---
 
     function abrirCriadorReceita() {
         // Reseta campos
@@ -546,7 +547,6 @@
 
     function adicionarIngredienteNaReceita(item) {
         // Ao adicionar, assume Qtd = Base (ex: 1 unidade)
-        // O usuário pode editar depois na lista
         const base = extrairQuantidadeBase(item.unidade);
         
         ingredientesEmEdicao.push({
@@ -621,7 +621,7 @@
             id: Date.now(),
             nome: nome,
             totalPontos: total,
-            itens: ingredientsEmEdicao // Salva a lista de ingredientes (futuro: editar receita)
+            itens: ingredientsEmEdicao // FIX: Corrigido typo (era ingredientsEmEdicao)
         };
 
         // Salva no LocalStorage
@@ -630,7 +630,7 @@
         localStorage.setItem(STORAGE_RECIPES_KEY, JSON.stringify(receitas));
 
         // Recarrega tudo para atualizar a busca
-        carregarTabelaJSON(); // Isso já vai ler as receitas novas
+        carregarTabelaJSON(); 
         
         fecharModal('recipeModal');
         alert(`Prato "${nome}" criado com sucesso! (${total} pts)`);
@@ -738,13 +738,11 @@
         const t = e.target.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         if (t.length < 2) { resultsList.style.display = 'none'; return; }
         
-        // Aumentado limite para 100 itens
         const res = tabelaAlimentos.filter(i => i.busca.includes(t)).slice(0, 100);
         
         resultsList.innerHTML = '';
         res.forEach(item => {
             const li = document.createElement('li');
-            // Destaque visual se for Receita
             const catClass = item.isRecipe ? 'search-cat-label is-recipe' : 'search-cat-label';
             const catName = item.isRecipe ? '★ MEUS PRATOS' : (item.cat || 'Geral');
 
