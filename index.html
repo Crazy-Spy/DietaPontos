@@ -286,24 +286,36 @@
     async function carregarTabelaJSON() {
         try {
             document.getElementById('loadingMsg').style.display = 'block';
-            const res = await fetch('tabela_pontos.json');
+            
+            // --- CACHE BUSTER ---
+            // Adicionei "?v=" + Date.now() no final.
+            // Isso cria uma URL única a cada milissegundo, obrigando o navegador a baixar o arquivo de novo.
+            const res = await fetch('tabela_pontos.json?v=' + Date.now());
+            
             const dados = await res.json();
             tabelaAlimentos = [];
+            
             dados.forEach(cat => {
                 if (cat.itens) {
                     cat.itens.forEach(item => {
+                        // Criei uma string de busca combinada: NOME + CATEGORIA
+                        // Assim se você buscar pela categoria, ele acha os itens também.
+                        const textoBusca = (item.nome + " " + cat.categoria).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                        
                         tabelaAlimentos.push({
                             ...item,
                             cat: cat.categoria,
-                            busca: item.nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                            busca: textoBusca
                         });
                     });
                 }
             });
             document.getElementById('loadingMsg').style.display = 'none';
         } catch (e) {
-            console.warn("JSON não encontrado.");
-            document.getElementById('loadingMsg').style.display = 'none';
+            console.warn("Erro ao carregar JSON ou JSON inválido.");
+            // Dica visual se der erro de sintaxe no JSON (vírgula sobrando, etc)
+            document.getElementById('loadingMsg').innerText = "Erro no arquivo JSON! Verifique as vírgulas.";
+            // document.getElementById('loadingMsg').style.display = 'none'; // Comentei pra vc ver o erro se tiver
         }
     }
 
