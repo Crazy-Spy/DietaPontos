@@ -24,7 +24,7 @@
         .meta-editable { background: transparent; border: none; font-size: 1.2em; font-weight: bold; color: var(--primary); width: 50px; text-align: right; border-bottom: 1px dashed var(--primary); }
         
         /* Botões */
-        .btn-print {
+        .btn-icon {
             background-color: var(--primary);
             color: white;
             border: none;
@@ -33,8 +33,19 @@
             cursor: pointer;
             font-size: 1.2em;
             transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .btn-print:hover { background-color: #4a148c; transform: scale(1.05); }
+        .btn-icon:hover { background-color: #4a148c; transform: scale(1.05); }
+
+        .btn-create-recipe {
+            background-color: #ff9800; /* Laranja pra destacar */
+            font-size: 1em;
+            font-weight: bold;
+            gap: 5px;
+        }
+        .btn-create-recipe:hover { background-color: #f57c00; }
 
         /* Progresso */
         .progress-wrapper { margin-top: 15px; }
@@ -48,7 +59,7 @@
         .search-wrapper { position: relative; margin: 20px 0; z-index: 100; }
         .search-box { width: 100%; padding: 16px; font-size: 1.1em; border: 2px solid #ddd; border-radius: 12px; box-sizing: border-box; outline: none; transition: border-color 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         .search-box:focus { border-color: var(--primary); }
-        .results { list-style: none; padding: 0; margin: 5px 0 0 0; max-height: 300px; overflow-y: auto; border: 1px solid #eee; border-radius: 12px; display: none; background: white; position: absolute; width: 100%; box-shadow: 0 10px 20px rgba(0,0,0,0.15); }
+        .results { list-style: none; padding: 0; margin: 5px 0 0 0; max-height: 300px; overflow-y: auto; border: 1px solid #eee; border-radius: 12px; display: none; background: white; position: absolute; width: 100%; box-shadow: 0 10px 20px rgba(0,0,0,0.15); z-index: 1000; }
         .results li { padding: 12px 16px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
         .results li:hover { background-color: #f3e5f5; }
         .results li span.pts { font-weight: bold; color: var(--white); background: var(--primary); padding: 4px 8px; border-radius: 6px; font-size: 0.9em; }
@@ -64,6 +75,9 @@
             margin-bottom: 4px;
             display: inline-block;
         }
+        
+        /* Tag especial para Receitas criadas */
+        .search-cat-label.is-recipe { background: #fff3e0; color: #e65100; border: 1px solid #ffe0b2; }
 
         /* Diário */
         .diary-section { margin-top: 20px; display: flex; flex-direction: column; gap: 15px; }
@@ -77,7 +91,7 @@
 
         /* MODAIS */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: none; align-items: center; justify-content: center; }
-        .modal-content { background: white; padding: 25px; border-radius: 15px; width: 90%; max-width: 340px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .modal-content { background: white; padding: 25px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto; }
         .modal-title { margin-top: 0; color: var(--primary); margin-bottom: 5px; }
         
         .calc-area { background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 15px 0; border: 1px solid #eee; }
@@ -104,7 +118,7 @@
             margin-top: 15px;
         }
 
-        .btn-cancel { margin-top: 15px; background: none; border: none; color: #888; text-decoration: underline; cursor: pointer; }
+        .btn-cancel { margin-top: 15px; background: none; border: none; color: #888; text-decoration: underline; cursor: pointer; display:block; margin-inline:auto; }
 
         .total-dia-card { background: var(--primary); color: white; padding: 15px; border-radius: 12px; margin-top: 20px; text-align: center; box-shadow: 0 4px 15px rgba(106, 27, 154, 0.3); }
         .total-dia-val { font-size: 2em; font-weight: bold; }
@@ -118,6 +132,22 @@
         .history-pts.status-success { background-color: var(--success); color: white; }
         .history-pts.status-fail { background-color: var(--danger); color: white; }
 
+        /* Estilos Específicos do Criador de Receitas */
+        .recipe-creator-box { text-align: left; }
+        .recipe-input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 1em; margin-bottom: 10px; }
+        .recipe-ingredients-list { list-style: none; padding: 0; margin: 10px 0; border: 1px solid #eee; border-radius: 8px; max-height: 200px; overflow-y: auto; }
+        .recipe-ing-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-bottom: 1px solid #eee; font-size: 0.9em; }
+        .recipe-ing-info { flex-grow: 1; }
+        .recipe-ing-ctrl { display: flex; align-items: center; gap: 5px; }
+        .recipe-ing-qty { width: 40px; text-align: center; padding: 2px; border: 1px solid #ddd; border-radius: 4px; }
+        .recipe-total { text-align: right; font-weight: bold; color: var(--primary); font-size: 1.2em; margin-top: 10px; border-top: 2px solid #eee; padding-top: 10px; }
+        
+        /* Busca dentro do modal de receitas */
+        .recipe-search-container { position: relative; }
+        .recipe-search-results { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-radius: 6px; max-height: 150px; overflow-y: auto; z-index: 2000; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.1); list-style: none; padding: 0; margin: 0;}
+        .recipe-search-results li { padding: 8px; border-bottom: 1px solid #eee; cursor: pointer; font-size: 0.9em; }
+        .recipe-search-results li:hover { background: #f3e5f5; }
+
     </style>
 </head>
 <body>
@@ -128,8 +158,15 @@
         
         <div class="controls-container">
             <input type="date" id="inputData" class="date-input" onchange="mudarData(this.value)">
-            <button class="btn-print" onclick="abrirModalPDF()" title="Imprimir Relatório">🖨️</button>
-            <div style="display:flex; align-items:center; gap:5px;">
+            
+            <div style="display:flex; gap:10px;">
+                <button class="btn-icon btn-create-recipe" onclick="abrirCriadorReceita()" title="Criar Novo Prato">
+                    <span>➕</span> Prato
+                </button>
+                <button class="btn-icon" onclick="abrirModalPDF()" title="Imprimir Relatório">🖨️</button>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:5px; width: 100%; margin-top: 10px;">
                 <span style="font-size:0.8em; font-weight:bold; color:var(--primary)">META:</span>
                 <input type="number" id="inputMeta" class="meta-editable" onchange="atualizarMeta(this.value)">
             </div>
@@ -202,6 +239,11 @@
             <button class="btn-meal" onclick="confirmarRefeicao('Lanche')">🥪 Lanche</button>
             <button class="btn-meal" onclick="confirmarRefeicao('Jantar')">🍲 Jantar</button>
         </div>
+
+        <button id="btnDeleteRecipe" class="btn-cancel" style="color:#f44336; margin-top:20px; display:none;" onclick="apagarReceitaCriada()">
+            🗑️ Apagar este Prato Criado
+        </button>
+
         <button class="btn-cancel" onclick="fecharModal('mealModal')">Cancelar</button>
     </div>
 </div>
@@ -210,42 +252,68 @@
     <div class="modal-content">
         <h3 class="modal-title">Gerar Relatório</h3>
         <p style="color:#666; font-size:0.9em; margin-bottom:15px;">
-            Escolha a segunda-feira inicial. O relatório incluirá todas as semanas com dados a partir dessa data.
+            Escolha a segunda-feira inicial.
         </p>
-        
         <div style="text-align:left; margin-bottom:15px;">
-            <label style="font-weight:bold; color:#444; font-size:0.9em;">Data Inicial (Segunda-feira):</label>
-            <input type="date" id="pdfStartDate" class="date-input" 
-                   style="width:100%; box-sizing:border-box; margin-top:5px;"
-                   onchange="atualizarTextoDataPDF()">
+            <label style="font-weight:bold; color:#444; font-size:0.9em;">Início:</label>
+            <input type="date" id="pdfStartDate" class="date-input" style="width:100%; box-sizing:border-box; margin-top:5px;" onchange="atualizarTextoDataPDF()">
             <p id="pdfDatePreview" style="font-size:0.9em; color:var(--primary); font-weight:bold; margin-top:5px; text-align:right;">...</p>
         </div>
-
-        <button class="btn-action-primary" onclick="executarGeracaoMultiplasSemanas()">📄 Gerar PDF Completo</button>
+        <button class="btn-action-primary" onclick="executarGeracaoMultiplasSemanas()">📄 Gerar PDF</button>
         <button class="btn-cancel" onclick="fecharModal('pdfModal')">Cancelar</button>
+    </div>
+</div>
+
+<div class="modal-overlay" id="recipeModal">
+    <div class="modal-content recipe-creator-box">
+        <h3 class="modal-title" style="text-align:center;">Criar Novo Prato</h3>
+        
+        <label style="font-size:0.9em; font-weight:bold;">Nome do Prato:</label>
+        <input type="text" id="recipeName" class="recipe-input" placeholder="Ex: Pão com Ovo">
+
+        <label style="font-size:0.9em; font-weight:bold;">Adicionar Ingredientes:</label>
+        <div class="recipe-search-container">
+            <input type="text" id="recipeSearchInput" class="recipe-input" placeholder="Busque o alimento..." autocomplete="off">
+            <ul id="recipeResultsList" class="recipe-search-results"></ul>
+        </div>
+
+        <ul id="recipeIngredientsList" class="recipe-ingredients-list">
+            <li style="padding:10px; text-align:center; color:#999; font-size:0.9em;" id="emptyMsg">Nenhum ingrediente ainda</li>
+        </ul>
+
+        <div class="recipe-total">
+            Total: <span id="recipeTotalPoints">0</span> pts
+        </div>
+
+        <button class="btn-action-primary" onclick="salvarReceita()">💾 Salvar Prato</button>
+        <button class="btn-cancel" onclick="fecharModal('recipeModal')">Cancelar</button>
     </div>
 </div>
 
 <script>
     const STORAGE_KEY = 'dieta_flavio_db';
     const PREF_META_KEY = 'dieta_flavio_meta';
+    const STORAGE_RECIPES_KEY = 'dieta_flavio_receitas'; // Novo storage para receitas
     
-    // --- LÓGICA DE META CORRIGIDA ---
-    // A constante agora TENTA ler do storage. Se não achar, usa 380 como "falha segura".
     const META_PADRAO = parseInt(localStorage.getItem(PREF_META_KEY)) || 380;
     
     let tabelaAlimentos = [];
     let itemSelecionadoTemp = null;
-    let metaAtual = META_PADRAO; // Inicializa com o valor inteligente
+    let metaAtual = META_PADRAO;
     
-    // Pega data local corrigida
+    // Data
     const hoje = new Date();
     const hojeLocal = new Date(hoje.getTime() - (hoje.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
     let dataSelecionada = hojeLocal;
     
+    // Vars calculadora
     let fatorBase = 1;
     let pontosBase = 0;
 
+    // Vars Criador de Receitas
+    let ingredientesEmEdicao = []; // Lista temporária [ {nome, unidade, qtd, pontosUnit, pontosTotal} ]
+
+    // Elementos
     const searchInput = document.getElementById('searchInput');
     const resultsList = document.getElementById('resultsList');
     const inputData = document.getElementById('inputData');
@@ -253,7 +321,7 @@
     window.onload = async () => {
         inputData.value = dataSelecionada;
         document.getElementById('inputMeta').value = metaAtual;
-        await carregarTabelaJSON();
+        await carregarTabelaJSON(); // Carrega JSON + Receitas
         renderizarDiario();
         renderizarHistoricoGeral();
     };
@@ -274,51 +342,69 @@
     }
 
     function atualizarMeta(val) {
-        // Se o usuário limpar o campo, tenta pegar do storage de novo. Se não tiver, vai pro 380.
         const metaStorage = parseInt(localStorage.getItem(PREF_META_KEY));
         metaAtual = parseInt(val) || metaStorage || 380;
-        
         localStorage.setItem(PREF_META_KEY, metaAtual);
         renderizarDiario();
         renderizarHistoricoGeral();
     }
 
+    // --- CARREGAMENTO DE DADOS (JSON + STORAGE) ---
     async function carregarTabelaJSON() {
         try {
             document.getElementById('loadingMsg').style.display = 'block';
             
-            // --- CACHE BUSTER ---
-            // Adicionei "?v=" + Date.now() no final.
-            // Isso cria uma URL única a cada milissegundo, obrigando o navegador a baixar o arquivo de novo.
+            // 1. Carrega o JSON Oficial (com cache buster pra garantir atualização)
             const res = await fetch('tabela_pontos.json?v=' + Date.now());
-            
             const dados = await res.json();
+            
             tabelaAlimentos = [];
             
+            // Adiciona itens do JSON
             dados.forEach(cat => {
                 if (cat.itens) {
                     cat.itens.forEach(item => {
-                        // Criei uma string de busca combinada: NOME + CATEGORIA
-                        // Assim se você buscar pela categoria, ele acha os itens também.
                         const textoBusca = (item.nome + " " + cat.categoria).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                        
                         tabelaAlimentos.push({
                             ...item,
                             cat: cat.categoria,
-                            busca: textoBusca
+                            busca: textoBusca,
+                            isRecipe: false
                         });
                     });
                 }
             });
+
+            // 2. Carrega as Receitas do Usuário (LocalStorage) e mistura na lista
+            carregarReceitasDoStorage();
+
             document.getElementById('loadingMsg').style.display = 'none';
         } catch (e) {
-            console.warn("Erro ao carregar JSON ou JSON inválido.");
-            // Dica visual se der erro de sintaxe no JSON (vírgula sobrando, etc)
-            document.getElementById('loadingMsg').innerText = "Erro no arquivo JSON! Verifique as vírgulas.";
-            // document.getElementById('loadingMsg').style.display = 'none'; // Comentei pra vc ver o erro se tiver
+            console.warn(e);
+            document.getElementById('loadingMsg').innerText = "Erro no arquivo JSON! Verifique.";
         }
     }
 
+    function carregarReceitasDoStorage() {
+        const receitasSalvas = JSON.parse(localStorage.getItem(STORAGE_RECIPES_KEY) || '[]');
+        
+        receitasSalvas.forEach(receita => {
+            // Cria um objeto compatível com a tabela de alimentos
+            const itemReceita = {
+                idReceita: receita.id, // ID único para poder apagar depois
+                nome: receita.nome,
+                unidade: "1 receita", // Padrão
+                pontos: receita.totalPontos,
+                cat: "Meus Pratos", // Categoria especial
+                busca: (receita.nome + " meus pratos receitas").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""),
+                isRecipe: true,
+                ingredientes: receita.itens // Guardamos pra referência se precisar
+            };
+            tabelaAlimentos.push(itemReceita);
+        });
+    }
+
+    // --- LÓGICA DE UNIDADES ---
     function extrairQuantidadeBase(textoUnidade) {
         const fracao = textoUnidade.match(/^(\d+)\/(\d+)/);
         if (fracao) return parseFloat(fracao[1]) / parseFloat(fracao[2]);
@@ -327,10 +413,13 @@
         return 1;
     }
 
+    // --- MODAL DE LANÇAMENTO (DIÁRIO) ---
     function abrirModalRefeicao(item) {
         itemSelecionadoTemp = item;
+        
         pontosBase = typeof item.pontos === 'number' ? item.pontos : 0;
         fatorBase = extrairQuantidadeBase(item.unidade);
+        
         let labelUnidade = item.unidade.replace(/^[\d\/]+\s*/, '');
         if (labelUnidade.length < 2) labelUnidade = "Porção(ões)";
 
@@ -340,8 +429,17 @@
         
         const inputQtd = document.getElementById('inputQtd');
         inputQtd.value = fatorBase;
+        
         recalcularPontos();
         
+        // Exibe botão de apagar SE for uma receita criada
+        const btnDel = document.getElementById('btnDeleteRecipe');
+        if (item.isRecipe) {
+            btnDel.style.display = 'block';
+        } else {
+            btnDel.style.display = 'none';
+        }
+
         document.getElementById('mealModal').style.display = 'flex';
         searchInput.blur();
     }
@@ -399,6 +497,165 @@
         renderizarHistoricoGeral();
     }
 
+    // --- CRIADOR DE RECEITAS (NOVO) ---
+
+    function abrirCriadorReceita() {
+        // Reseta campos
+        document.getElementById('recipeName').value = '';
+        document.getElementById('recipeSearchInput').value = '';
+        document.getElementById('recipeTotalPoints').innerText = '0';
+        ingredientesEmEdicao = [];
+        renderizarListaIngredientesReceita();
+        
+        document.getElementById('recipeModal').style.display = 'flex';
+    }
+
+    // Busca interna do modal de receitas
+    const recipeSearchInput = document.getElementById('recipeSearchInput');
+    const recipeResultsList = document.getElementById('recipeResultsList');
+
+    recipeSearchInput.addEventListener('input', (e) => {
+        const t = e.target.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        if (t.length < 2) { recipeResultsList.style.display = 'none'; return; }
+        
+        // Permite buscar qualquer coisa, inclusive outras receitas! (Inception de comida)
+        const res = tabelaAlimentos.filter(i => i.busca.includes(t)).slice(0, 50);
+        
+        recipeResultsList.innerHTML = '';
+        res.forEach(item => {
+            const li = document.createElement('li');
+            li.innerHTML = `<b>${item.nome}</b> <span style="color:#666; font-size:0.8em">(${item.pontos}pts / ${item.unidade})</span>`;
+            
+            li.onclick = () => {
+                adicionarIngredienteNaReceita(item);
+                recipeSearchInput.value = '';
+                recipeResultsList.style.display = 'none';
+                recipeSearchInput.focus();
+            };
+            recipeResultsList.appendChild(li);
+        });
+        recipeResultsList.style.display = res.length ? 'block' : 'none';
+    });
+
+    // Esconde a lista se clicar fora
+    document.addEventListener('click', (e) => {
+        if (!recipeSearchInput.contains(e.target) && !recipeResultsList.contains(e.target)) {
+            recipeResultsList.style.display = 'none';
+        }
+    });
+
+    function adicionarIngredienteNaReceita(item) {
+        // Ao adicionar, assume Qtd = Base (ex: 1 unidade)
+        // O usuário pode editar depois na lista
+        const base = extrairQuantidadeBase(item.unidade);
+        
+        ingredientesEmEdicao.push({
+            nome: item.nome,
+            unidadeOriginal: item.unidade,
+            fatorBase: base,
+            pontosBase: item.pontos,
+            qtd: base // Qtd inicial
+        });
+        
+        renderizarListaIngredientesReceita();
+    }
+
+    function renderizarListaIngredientesReceita() {
+        const lista = document.getElementById('recipeIngredientsList');
+        lista.innerHTML = '';
+        
+        let totalReceita = 0;
+
+        if (ingredientesEmEdicao.length === 0) {
+            lista.innerHTML = '<li style="padding:10px; text-align:center; color:#999; font-size:0.9em;">Nenhum ingrediente ainda</li>';
+        }
+
+        ingredientesEmEdicao.forEach((ing, index) => {
+            // Calcula pontos desse ingrediente com base na qtd
+            const ptsIngrediente = Math.round((ing.qtd / ing.fatorBase) * ing.pontosBase);
+            totalReceita += ptsIngrediente;
+
+            const li = document.createElement('li');
+            li.className = 'recipe-ing-item';
+            
+            // HTML do item: Nome, Input Qtd, Pontos, Botão Remover
+            li.innerHTML = `
+                <div class="recipe-ing-info">
+                    <div><b>${ing.nome}</b></div>
+                    <div style="font-size:0.8em; color:#666">Base: ${ing.unidadeOriginal}</div>
+                </div>
+                <div class="recipe-ing-ctrl">
+                    <input type="number" class="recipe-ing-qty" value="${ing.qtd}" step="0.1" 
+                           onchange="atualizarQtdIngrediente(${index}, this.value)">
+                    <span style="font-size:0.9em; font-weight:bold; min-width:40px; text-align:right;">${ptsIngrediente}pts</span>
+                    <button style="border:none; background:none; cursor:pointer;" onclick="removerIngredienteReceita(${index})">❌</button>
+                </div>
+            `;
+            lista.appendChild(li);
+        });
+
+        document.getElementById('recipeTotalPoints').innerText = totalReceita;
+    }
+
+    function atualizarQtdIngrediente(index, novaQtd) {
+        const val = parseFloat(novaQtd);
+        if (val >= 0) {
+            ingredientesEmEdicao[index].qtd = val;
+            renderizarListaIngredientesReceita();
+        }
+    }
+
+    function removerIngredienteReceita(index) {
+        ingredientesEmEdicao.splice(index, 1);
+        renderizarListaIngredientesReceita();
+    }
+
+    function salvarReceita() {
+        const nome = document.getElementById('recipeName').value.trim();
+        const total = parseInt(document.getElementById('recipeTotalPoints').innerText);
+        
+        if (!nome) { alert("Dê um nome para o prato!"); return; }
+        if (ingredientesEmEdicao.length === 0) { alert("Adicione ingredientes!"); return; }
+
+        const novaReceita = {
+            id: Date.now(),
+            nome: nome,
+            totalPontos: total,
+            itens: ingredientsEmEdicao // Salva a lista de ingredientes (futuro: editar receita)
+        };
+
+        // Salva no LocalStorage
+        const receitas = JSON.parse(localStorage.getItem(STORAGE_RECIPES_KEY) || '[]');
+        receitas.push(novaReceita);
+        localStorage.setItem(STORAGE_RECIPES_KEY, JSON.stringify(receitas));
+
+        // Recarrega tudo para atualizar a busca
+        carregarTabelaJSON(); // Isso já vai ler as receitas novas
+        
+        fecharModal('recipeModal');
+        alert(`Prato "${nome}" criado com sucesso! (${total} pts)`);
+    }
+
+    function apagarReceitaCriada() {
+        if (!itemSelecionadoTemp || !itemSelecionadoTemp.isRecipe) return;
+        
+        if(confirm(`Tem certeza que deseja apagar o prato "${itemSelecionadoTemp.nome}" para sempre?`)) {
+            const idParaApagar = itemSelecionadoTemp.idReceita;
+            
+            let receitas = JSON.parse(localStorage.getItem(STORAGE_RECIPES_KEY) || '[]');
+            receitas = receitas.filter(r => r.id !== idParaApagar);
+            localStorage.setItem(STORAGE_RECIPES_KEY, JSON.stringify(receitas));
+            
+            // Recarrega app
+            fecharModal('mealModal');
+            searchInput.value = '';
+            resultsList.style.display = 'none';
+            carregarTabelaJSON();
+            alert("Prato apagado!");
+        }
+    }
+
+    // --- RENDERIZAÇÃO DIÁRIO ---
     function renderizarDiario() {
         const historico = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
         const itensDoDia = historico.filter(i => i.data === dataSelecionada);
@@ -446,9 +703,7 @@
         const bar = document.getElementById('progressBar');
         bar.style.width = `${pct}%`;
         bar.className = 'progress-bar';
-        
         bar.classList.remove('warning', 'danger');
-        
         if(pct > 80 && pct < 100) bar.classList.add('warning');
         if(pct >= 100) bar.classList.add('danger');
     }
@@ -457,12 +712,8 @@
         const historico = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
         const listaEl = document.getElementById('historicoGeralLista');
         listaEl.innerHTML = '';
-        
-        // CORREÇÃO: Garante que o histórico use a meta SALVA no storage como prioridade máxima
         const metaSalvaStorage = parseInt(localStorage.getItem(PREF_META_KEY));
-        // Se tiver salvo, usa. Se não, usa 380.
         const metaParaCalculo = metaSalvaStorage || 380;
-
         const resumo = {};
         historico.forEach(i => { resumo[i.data] = (resumo[i.data] || 0) + i.pontos; });
         
@@ -476,29 +727,30 @@
 
             const li = document.createElement('li');
             li.className = 'history-item';
-            li.innerHTML = `
-                <div>${p[2]}/${p[1]}/${p[0]}</div>
-                <div class="history-pts ${statusClass}">
-                    <span>${icon}</span> ${total} pts
-                </div>
-            `;
+            li.innerHTML = `<div>${p[2]}/${p[1]}/${p[0]}</div><div class="history-pts ${statusClass}"><span>${icon}</span> ${total} pts</div>`;
             li.onclick = () => { inputData.value = d; mudarData(d); window.scrollTo(0,0); };
             listaEl.appendChild(li);
         });
     }
 
-    // --- BUSCA E PDF ---
-
+    // BUSCA PRINCIPAL
     searchInput.addEventListener('input', (e) => {
         const t = e.target.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         if (t.length < 2) { resultsList.style.display = 'none'; return; }
-        const res = tabelaAlimentos.filter(i => i.busca.includes(t));
+        
+        // Aumentado limite para 100 itens
+        const res = tabelaAlimentos.filter(i => i.busca.includes(t)).slice(0, 100);
+        
         resultsList.innerHTML = '';
         res.forEach(item => {
             const li = document.createElement('li');
+            // Destaque visual se for Receita
+            const catClass = item.isRecipe ? 'search-cat-label is-recipe' : 'search-cat-label';
+            const catName = item.isRecipe ? '★ MEUS PRATOS' : (item.cat || 'Geral');
+
             li.innerHTML = `
                 <div>
-                    <span class="search-cat-label">${item.cat || 'Geral'}</span><br>
+                    <span class="${catClass}">${catName}</span><br>
                     <b>${item.nome}</b><br>
                     <small>${item.unidade}</small>
                 </div>
@@ -516,6 +768,7 @@
         modals.forEach(m => { if(e.target === m) m.style.display = 'none'; });
     });
 
+    // --- PDF ---
     function abrirModalPDF() {
         const partes = dataSelecionada.split('-'); 
         const dataRef = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]), 12, 0, 0);
