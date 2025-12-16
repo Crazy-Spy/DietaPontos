@@ -23,7 +23,7 @@
         .date-input { border: 1px solid #ddd; padding: 8px; border-radius: 6px; font-family: inherit; color: var(--primary); font-weight: bold; flex-grow: 1; }
         .meta-editable { background: transparent; border: none; font-size: 1.2em; font-weight: bold; color: var(--primary); width: 50px; text-align: right; border-bottom: 1px dashed var(--primary); }
         
-        /* Botão de PDF */
+        /* Botões */
         .btn-print {
             background-color: var(--primary);
             color: white;
@@ -53,6 +53,18 @@
         .results li:hover { background-color: #f3e5f5; }
         .results li span.pts { font-weight: bold; color: var(--white); background: var(--primary); padding: 4px 8px; border-radius: 6px; font-size: 0.9em; }
 
+        .search-cat-label {
+            font-size: 0.75em;
+            color: var(--primary);
+            text-transform: uppercase;
+            font-weight: bold;
+            background: #f3e5f5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-bottom: 4px;
+            display: inline-block;
+        }
+
         /* Diário */
         .diary-section { margin-top: 20px; display: flex; flex-direction: column; gap: 15px; }
         .meal-card { background: var(--white); border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #eee; }
@@ -68,7 +80,6 @@
         .modal-content { background: white; padding: 25px; border-radius: 15px; width: 90%; max-width: 340px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
         .modal-title { margin-top: 0; color: var(--primary); margin-bottom: 5px; }
         
-        /* Área de Calculo */
         .calc-area { background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 15px 0; border: 1px solid #eee; }
         .calc-info { font-size: 0.9em; color: #666; margin-bottom: 10px; }
         .calc-input-group { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; }
@@ -104,8 +115,6 @@
         .history-item:active { transform: scale(0.98); background: #f9f9f9; }
         
         .history-pts { font-weight: bold; color: var(--primary); background: #f3e5f5; padding: 5px 12px; border-radius: 20px; font-size: 0.9em; display: flex; align-items: center; gap: 6px; }
-        
-        /* Classes de Status no Histórico */
         .history-pts.status-success { background-color: var(--success); color: white; }
         .history-pts.status-fail { background-color: var(--danger); color: white; }
 
@@ -122,7 +131,7 @@
             <button class="btn-print" onclick="abrirModalPDF()" title="Imprimir Relatório">🖨️</button>
             <div style="display:flex; align-items:center; gap:5px;">
                 <span style="font-size:0.8em; font-weight:bold; color:var(--primary)">META:</span>
-                <input type="number" id="inputMeta" class="meta-editable" value="380" onchange="atualizarMeta(this.value)">
+                <input type="number" id="inputMeta" class="meta-editable" onchange="atualizarMeta(this.value)">
             </div>
         </div>
 
@@ -209,16 +218,10 @@
             <input type="date" id="pdfStartDate" class="date-input" 
                    style="width:100%; box-sizing:border-box; margin-top:5px;"
                    onchange="atualizarTextoDataPDF()">
-            
-            <p id="pdfDatePreview" style="font-size:0.9em; color:var(--primary); font-weight:bold; margin-top:5px; text-align:right;">
-                ...
-            </p>
+            <p id="pdfDatePreview" style="font-size:0.9em; color:var(--primary); font-weight:bold; margin-top:5px; text-align:right;">...</p>
         </div>
 
-        <button class="btn-action-primary" onclick="executarGeracaoMultiplasSemanas()">
-            📄 Gerar PDF Completo
-        </button>
-        
+        <button class="btn-action-primary" onclick="executarGeracaoMultiplasSemanas()">📄 Gerar PDF Completo</button>
         <button class="btn-cancel" onclick="fecharModal('pdfModal')">Cancelar</button>
     </div>
 </div>
@@ -227,9 +230,13 @@
     const STORAGE_KEY = 'dieta_flavio_db';
     const PREF_META_KEY = 'dieta_flavio_meta';
     
+    // --- LÓGICA DE META CORRIGIDA ---
+    // A constante agora TENTA ler do storage. Se não achar, usa 380 como "falha segura".
+    const META_PADRAO = parseInt(localStorage.getItem(PREF_META_KEY)) || 380;
+    
     let tabelaAlimentos = [];
     let itemSelecionadoTemp = null;
-    let metaAtual = localStorage.getItem(PREF_META_KEY) || 380;
+    let metaAtual = META_PADRAO; // Inicializa com o valor inteligente
     
     // Pega data local corrigida
     const hoje = new Date();
@@ -267,10 +274,13 @@
     }
 
     function atualizarMeta(val) {
-        metaAtual = parseInt(val) || 380;
+        // Se o usuário limpar o campo, tenta pegar do storage de novo. Se não tiver, vai pro 380.
+        const metaStorage = parseInt(localStorage.getItem(PREF_META_KEY));
+        metaAtual = parseInt(val) || metaStorage || 380;
+        
         localStorage.setItem(PREF_META_KEY, metaAtual);
         renderizarDiario();
-        renderizarHistoricoGeral(); // Atualiza histórico para refletir nova meta (cor muda na hora)
+        renderizarHistoricoGeral();
     }
 
     async function carregarTabelaJSON() {
@@ -436,9 +446,10 @@
         const listaEl = document.getElementById('historicoGeralLista');
         listaEl.innerHTML = '';
         
-        // Pega a meta salva no storage (ou usa 380 só se não tiver NADA salvo ainda)
-        const metaSalva = parseInt(localStorage.getItem(PREF_META_KEY));
-        const metaParaCalculo = metaSalva ? metaSalva : 380;
+        // CORREÇÃO: Garante que o histórico use a meta SALVA no storage como prioridade máxima
+        const metaSalvaStorage = parseInt(localStorage.getItem(PREF_META_KEY));
+        // Se tiver salvo, usa. Se não, usa 380.
+        const metaParaCalculo = metaSalvaStorage || 380;
 
         const resumo = {};
         historico.forEach(i => { resumo[i.data] = (resumo[i.data] || 0) + i.pontos; });
@@ -446,11 +457,8 @@
         Object.keys(resumo).sort().reverse().forEach(d => {
             if(d === dataSelecionada) return; 
             const p = d.split('-');
-            
             const total = resumo[d];
-            // Agora usa a variável que veio direto do storage
             const sucesso = total <= metaParaCalculo;
-            
             const statusClass = sucesso ? 'status-success' : 'status-fail';
             const icon = sucesso ? '✅' : '❌';
 
@@ -467,25 +475,46 @@
         });
     }
 
-    // --- FUNÇÕES DO PDF ---
+    // --- BUSCA E PDF ---
+
+    searchInput.addEventListener('input', (e) => {
+        const t = e.target.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        if (t.length < 2) { resultsList.style.display = 'none'; return; }
+        const res = tabelaAlimentos.filter(i => i.busca.includes(t)).slice(0, 8);
+        resultsList.innerHTML = '';
+        res.forEach(item => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <div>
+                    <span class="search-cat-label">${item.cat || 'Geral'}</span><br>
+                    <b>${item.nome}</b><br>
+                    <small>${item.unidade}</small>
+                </div>
+                <span class="pts">${item.pontos}</span>
+            `;
+            li.onclick = () => abrirModalRefeicao(item);
+            resultsList.appendChild(li);
+        });
+        resultsList.style.display = res.length ? 'block' : 'none';
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !resultsList.contains(e.target)) resultsList.style.display = 'none';
+        const modals = document.querySelectorAll('.modal-overlay');
+        modals.forEach(m => { if(e.target === m) m.style.display = 'none'; });
+    });
 
     function abrirModalPDF() {
         const partes = dataSelecionada.split('-'); 
-        // Cria data ao meio-dia para evitar bug de fuso
         const dataRef = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]), 12, 0, 0);
-
         const diaSemana = dataRef.getDay(); 
         const diasVoltar = (diaSemana === 0) ? 6 : (diaSemana - 1);
-        
         dataRef.setDate(dataRef.getDate() - diasVoltar);
-        
         const y = dataRef.getFullYear();
         const m = String(dataRef.getMonth() + 1).padStart(2, '0');
         const d = String(dataRef.getDate()).padStart(2, '0');
-        
         const inputPDF = document.getElementById('pdfStartDate');
         inputPDF.value = `${y}-${m}-${d}`;
-        
         atualizarTextoDataPDF();
         document.getElementById('pdfModal').style.display = 'flex';
     }
@@ -493,14 +522,11 @@
     function atualizarTextoDataPDF() {
         const val = document.getElementById('pdfStartDate').value;
         if(!val) return;
-        
         const p = val.split('-');
         const d = new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2]), 12, 0, 0);
-        
         const opcoes = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' };
         const texto = d.toLocaleDateString('pt-BR', opcoes);
         const textoFormatado = texto.charAt(0).toUpperCase() + texto.slice(1);
-        
         document.getElementById('pdfDatePreview').innerText = "Selecionado: " + textoFormatado;
     }
 
@@ -514,29 +540,21 @@
     function executarGeracaoMultiplasSemanas() {
         const startVal = document.getElementById('pdfStartDate').value;
         if(!startVal) { alert("Selecione uma data!"); return; }
-
         const ultimaDataString = obterUltimaDataRegistrada();
         const partesUltima = (ultimaDataString || startVal).split('-');
         const ultimaData = new Date(parseInt(partesUltima[0]), parseInt(partesUltima[1])-1, parseInt(partesUltima[2]), 12, 0, 0);
-
         const partesInicio = startVal.split('-');
         let cursorData = new Date(parseInt(partesInicio[0]), parseInt(partesInicio[1])-1, parseInt(partesInicio[2]), 12, 0, 0);
-
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('l', 'mm', 'a4');
         const historicoCompleto = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-        
         let paginaCount = 0;
-
         while (cursorData <= ultimaData) {
             if (paginaCount > 0) doc.addPage();
-            
             gerarPaginaSemana(doc, cursorData, historicoCompleto);
-            
             cursorData.setDate(cursorData.getDate() + 7);
             paginaCount++;
         }
-
         doc.save(`relatorio_completo_desde_${startVal}.pdf`);
         fecharModal('pdfModal');
     }
@@ -545,48 +563,38 @@
         const diasNomes = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
         const headerColunas = ["Refeição / Dia"];
         const totaisRefeicoes = { 'Manhã': [], 'Almoço': [], 'Jantar': [], 'Lanche': [], 'TotalDia': [] };
-
         const dataLoop = new Date(dataInicioSemana);
         const dataFinalLabel = new Date(dataInicioSemana);
         dataFinalLabel.setDate(dataFinalLabel.getDate() + 6);
-        
         for (let i = 0; i < 7; i++) {
             const anoStr = dataLoop.getFullYear();
             const mesStr = String(dataLoop.getMonth() + 1).padStart(2, '0');
             const diaStr = String(dataLoop.getDate()).padStart(2, '0');
             const dataKey = `${anoStr}-${mesStr}-${diaStr}`;
-            
             let diaSemanaIndex = dataLoop.getDay() - 1; 
             if (diaSemanaIndex < 0) diaSemanaIndex = 6;
-            
             headerColunas.push(`${diasNomes[diaSemanaIndex]}\n${diaStr}/${mesStr}`);
-
             const itensDoDia = dados.filter(x => x.data === dataKey);
             const m = itensDoDia.filter(x => x.refeicao === 'Manhã').reduce((a, b) => a + b.pontos, 0);
             const a = itensDoDia.filter(x => x.refeicao === 'Almoço').reduce((a, b) => a + b.pontos, 0);
             const j = itensDoDia.filter(x => x.refeicao === 'Jantar').reduce((a, b) => a + b.pontos, 0);
             const l = itensDoDia.filter(x => x.refeicao === 'Lanche').reduce((a, b) => a + b.pontos, 0);
-
             totaisRefeicoes['Manhã'].push(m);
             totaisRefeicoes['Almoço'].push(a);
             totaisRefeicoes['Jantar'].push(j);
             totaisRefeicoes['Lanche'].push(l);
             totaisRefeicoes['TotalDia'].push(m + a + j + l);
-            
             dataLoop.setDate(dataLoop.getDate() + 1);
         }
-
         doc.setFontSize(14);
         doc.text("Drª Janine Malucelli Favorito - Endocrinologista / CRM 12449", 14, 15);
         doc.setFontSize(22);
         doc.setFont("helvetica", "bold");
         doc.text("Diário Alimentar - Resumo de Pontos", 14, 25);
-        
         const formatar = (d) => d.toLocaleDateString('pt-BR');
         doc.setFontSize(12);
         doc.setFont("helvetica", "normal");
         doc.text(`Semana: ${formatar(dataInicioSemana)} a ${formatar(dataFinalLabel)}`, 14, 32);
-
         const bodyData = [
             [{ content: "Manhã", styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, "", "", "", "", "", "", ""], 
             [{ content: "Total Manhã", styles: { fontStyle: 'bold' } }, ...totaisRefeicoes['Manhã']],
@@ -601,7 +609,6 @@
                 ...totaisRefeicoes['TotalDia'].map(total => ({ content: total, styles: { fontStyle: 'bold', fillColor: [220, 220, 220] } }))
             ]
         ];
-
         doc.autoTable({
             startY: 38,
             head: [headerColunas],
@@ -612,27 +619,6 @@
             columnStyles: { 0: { cellWidth: 35, halign: 'left' } }
         });
     }
-
-    searchInput.addEventListener('input', (e) => {
-        const t = e.target.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        if (t.length < 2) { resultsList.style.display = 'none'; return; }
-        const res = tabelaAlimentos.filter(i => i.busca.includes(t)).slice(0, 8);
-        resultsList.innerHTML = '';
-        res.forEach(item => {
-            const li = document.createElement('li');
-            li.innerHTML = `<div><b>${item.nome}</b><br><small>${item.unidade}</small></div><span class="pts">${item.pontos}</span>`;
-            li.onclick = () => abrirModalRefeicao(item);
-            resultsList.appendChild(li);
-        });
-        resultsList.style.display = res.length ? 'block' : 'none';
-    });
-
-    document.addEventListener('click', (e) => {
-        if (!searchInput.contains(e.target) && !resultsList.contains(e.target)) resultsList.style.display = 'none';
-        const modals = document.querySelectorAll('.modal-overlay');
-        modals.forEach(m => { if(e.target === m) m.style.display = 'none'; });
-    });
-
 </script>
 </body>
 </html>
