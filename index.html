@@ -492,7 +492,7 @@
     searchInput.addEventListener('input', (e) => {
         const t = e.target.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         if (t.length < 2) { resultsList.style.display = 'none'; return; }
-        const res = tabelaAlimentos.filter(i => i.busca.includes(t)).slice(0, 8);
+        const res = tabelaAlimentos.filter(i => i.busca.includes(t));
         resultsList.innerHTML = '';
         res.forEach(item => {
             const li = document.createElement('li');
