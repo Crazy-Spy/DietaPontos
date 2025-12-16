@@ -312,7 +312,10 @@
     
     const META_PADRAO = parseInt(localStorage.getItem(PREF_META_KEY)) || 380;
     
-    let tabelaAlimentos = [];
+    // CACHE PARA PERFORMANCE
+    let cacheDadosJSON = null; // Guarda o JSON puro para não baixar de novo
+    let tabelaAlimentos = [];  // Lista misturada (JSON + Receitas) usada na busca
+    
     let itemSelecionadoTemp = null;
     let metaAtual = META_PADRAO;
     
@@ -325,7 +328,7 @@
 
     // Vars Criador de Receitas
     let ingredientesEmEdicao = [];
-    let idReceitaEmEdicao = null; // Controla se estamos criando ou editando
+    let idReceitaEmEdicao = null; 
 
     const searchInput = document.getElementById('searchInput');
     const resultsList = document.getElementById('resultsList');
@@ -334,7 +337,10 @@
     window.onload = async () => {
         inputData.value = dataSelecionada;
         document.getElementById('inputMeta').value = metaAtual;
-        await carregarTabelaJSON();
+        
+        // Carrega dados iniciais
+        await carregarTabelaJSON(); 
+        
         renderizarDiario();
         renderizarHistoricoGeral();
     };
@@ -362,15 +368,35 @@
         renderizarHistoricoGeral();
     }
 
-    // --- CARREGAMENTO ---
+    // --- SISTEMA DE DADOS OTIMIZADO ---
+
+    // 1. Baixa o arquivo SÓ UMA VEZ e salva no cache
     async function carregarTabelaJSON() {
         try {
             document.getElementById('loadingMsg').style.display = 'block';
-            const res = await fetch('tabela_pontos.json?v=' + Date.now());
-            const dados = await res.json();
-            tabelaAlimentos = [];
             
-            dados.forEach(cat => {
+            // Fetch com cache buster
+            const res = await fetch('tabela_pontos.json?v=' + Date.now());
+            cacheDadosJSON = await res.json(); // Salva na variavel global
+            
+            // Constrói a tabela de busca
+            reconstruirIndicePesquisa();
+
+            document.getElementById('loadingMsg').style.display = 'none';
+        } catch (e) {
+            console.warn(e);
+            document.getElementById('loadingMsg').innerText = "Erro ao carregar dados!";
+        }
+    }
+
+    // 2. Mistura (JSON Cacheado) + (Receitas do Storage)
+    // Essa função é RÁPIDA (síncrona), não baixa nada da rede.
+    function reconstruirIndicePesquisa() {
+        tabelaAlimentos = [];
+        
+        // Parte A: Dados do JSON (se já baixou)
+        if (cacheDadosJSON) {
+            cacheDadosJSON.forEach(cat => {
                 if (cat.itens) {
                     cat.itens.forEach(item => {
                         const textoBusca = (item.nome + " " + cat.categoria).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -383,16 +409,9 @@
                     });
                 }
             });
-
-            carregarReceitasDoStorage();
-            document.getElementById('loadingMsg').style.display = 'none';
-        } catch (e) {
-            console.warn(e);
-            document.getElementById('loadingMsg').innerText = "Erro no arquivo JSON!";
         }
-    }
 
-    function carregarReceitasDoStorage() {
+        // Parte B: Receitas do Usuário
         const receitasSalvas = JSON.parse(localStorage.getItem(STORAGE_RECIPES_KEY) || '[]');
         receitasSalvas.forEach(receita => {
             const itemReceita = {
@@ -409,6 +428,7 @@
         });
     }
 
+    // --- LÓGICA DE UNIDADES ---
     function extrairQuantidadeBase(textoUnidade) {
         const fracao = textoUnidade.match(/^(\d+)\/(\d+)/);
         if (fracao) return parseFloat(fracao[1]) / parseFloat(fracao[2]);
@@ -417,8 +437,10 @@
         return 1;
     }
 
+    // --- MODAIS ---
     function abrirModalRefeicao(item) {
         itemSelecionadoTemp = item;
+        
         pontosBase = typeof item.pontos === 'number' ? item.pontos : 0;
         fatorBase = extrairQuantidadeBase(item.unidade);
         let labelUnidade = item.unidade.replace(/^[\d\/]+\s*/, '');
@@ -493,7 +515,7 @@
         renderizarHistoricoGeral();
     }
 
-    // --- GERENCIADOR DE RECEITAS (NOVO MODAL DE LISTA) ---
+    // --- GERENCIADOR DE RECEITAS ---
 
     function abrirGerenciadorReceitas() {
         const receitas = JSON.parse(localStorage.getItem(STORAGE_RECIPES_KEY) || '[]');
@@ -503,6 +525,8 @@
         if(receitas.length === 0) {
             lista.innerHTML = '<li style="text-align:center; color:#999; padding:20px;">Nenhuma receita criada.</li>';
         } else {
+            // OTIMIZAÇÃO: Usar Fragment para evitar reflows no loop
+            const fragment = document.createDocumentFragment();
             receitas.forEach(rec => {
                 const li = document.createElement('li');
                 li.className = 'recipe-list-item';
@@ -516,8 +540,9 @@
                         <button class="btn-action-small" onclick="deletarReceitaDireto(${rec.id})" title="Apagar" style="color:#f44336; border-color:#f44336;">🗑️</button>
                     </div>
                 `;
-                lista.appendChild(li);
+                fragment.appendChild(li);
             });
+            lista.appendChild(fragment);
         }
         document.getElementById('manageRecipesModal').style.display = 'flex';
     }
@@ -528,9 +553,9 @@
         receitas = receitas.filter(r => r.id !== id);
         localStorage.setItem(STORAGE_RECIPES_KEY, JSON.stringify(receitas));
         
-        // Recarrega
-        carregarTabelaJSON();
-        abrirGerenciadorReceitas(); // Atualiza a lista
+        // OTIMIZAÇÃO: Não baixa JSON de novo
+        reconstruirIndicePesquisa(); 
+        abrirGerenciadorReceitas();
     }
 
     function editarReceita(id) {
@@ -538,20 +563,18 @@
         const rec = receitas.find(r => r.id === id);
         if(!rec) return;
 
-        // Fecha o gerenciador e abre o criador
         fecharModal('manageRecipesModal');
         
-        // Preenche o criador
         document.getElementById('recipeModalTitle').innerText = "Editar Prato";
         document.getElementById('recipeName').value = rec.nome;
         ingredientesEmEdicao = rec.itens || [];
-        idReceitaEmEdicao = id; // Marca que estamos editando
+        idReceitaEmEdicao = id;
         
         renderizarListaIngredientesReceita();
         document.getElementById('recipeModal').style.display = 'flex';
     }
 
-    // --- CRIADOR DE RECEITAS (LÓGICA) ---
+    // --- CRIADOR DE RECEITAS ---
 
     function abrirCriadorReceita() {
         document.getElementById('recipeModalTitle').innerText = "Criar Novo Prato";
@@ -559,7 +582,7 @@
         document.getElementById('recipeSearchInput').value = '';
         document.getElementById('recipeTotalPoints').innerText = '0';
         ingredientesEmEdicao = [];
-        idReceitaEmEdicao = null; // Novo prato
+        idReceitaEmEdicao = null;
         renderizarListaIngredientesReceita();
         document.getElementById('recipeModal').style.display = 'flex';
     }
@@ -613,6 +636,8 @@
             lista.innerHTML = '<li style="padding:10px; text-align:center; color:#999; font-size:0.9em;">Nenhum ingrediente ainda</li>';
         }
 
+        // OTIMIZAÇÃO: Fragment
+        const fragment = document.createDocumentFragment();
         ingredientesEmEdicao.forEach((ing, index) => {
             const ptsIngrediente = Math.round((ing.qtd / ing.fatorBase) * ing.pontosBase);
             totalReceita += ptsIngrediente;
@@ -631,8 +656,9 @@
                     <button style="border:none; background:none; cursor:pointer;" onclick="removerIngredienteReceita(${index})">❌</button>
                 </div>
             `;
-            lista.appendChild(li);
+            fragment.appendChild(li);
         });
+        lista.appendChild(fragment);
         document.getElementById('recipeTotalPoints').innerText = totalReceita;
     }
 
@@ -659,7 +685,6 @@
         let receitas = JSON.parse(localStorage.getItem(STORAGE_RECIPES_KEY) || '[]');
 
         if (idReceitaEmEdicao) {
-            // EDITA EXISTENTE
             const index = receitas.findIndex(r => r.id === idReceitaEmEdicao);
             if (index !== -1) {
                 receitas[index].nome = nome;
@@ -667,7 +692,6 @@
                 receitas[index].itens = ingredientesEmEdicao;
             }
         } else {
-            // CRIA NOVA
             const novaReceita = {
                 id: Date.now(),
                 nome: nome,
@@ -678,14 +702,16 @@
         }
 
         localStorage.setItem(STORAGE_RECIPES_KEY, JSON.stringify(receitas));
-        carregarTabelaJSON(); // Recarrega para incluir na busca
+        
+        // OTIMIZAÇÃO: AQUI ESTAVA O PROBLEMA.
+        // Agora chamamos apenas a reconstrução em memória, não o fetch.
+        reconstruirIndicePesquisa(); 
         
         fecharModal('recipeModal');
         alert(`Prato "${nome}" salvo com sucesso!`);
     }
 
     function apagarReceitaCriada() {
-        // Função usada no modal de lançamento (quando encontra via busca)
         if (!itemSelecionadoTemp || !itemSelecionadoTemp.isRecipe) return;
         
         if(confirm(`Tem certeza que deseja apagar o prato "${itemSelecionadoTemp.nome}" para sempre?`)) {
@@ -697,28 +723,47 @@
             fecharModal('mealModal');
             searchInput.value = '';
             resultsList.style.display = 'none';
-            carregarTabelaJSON();
+            
+            // OTIMIZAÇÃO: Sem fetch
+            reconstruirIndicePesquisa();
+            
             alert("Prato apagado!");
         }
     }
 
-    // RENDER E ETC
+    // --- RENDERIZAÇÃO DIÁRIO ---
     function renderizarDiario() {
         const historico = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
         const itensDoDia = historico.filter(i => i.data === dataSelecionada);
         const grupos = { 'Manhã': {total:0, el:document.getElementById('listManha'), tel:document.getElementById('totalManha')}, 'Almoço': {total:0, el:document.getElementById('listAlmoco'), tel:document.getElementById('totalAlmoco')}, 'Jantar': {total:0, el:document.getElementById('listJantar'), tel:document.getElementById('totalJantar')}, 'Lanche': {total:0, el:document.getElementById('listLanche'), tel:document.getElementById('totalLanche')} };
+        
         for (let key in grupos) grupos[key].el.innerHTML = '';
         let totalDia = 0;
+        
+        // OTIMIZAÇÃO: Fragment
+        const fragments = {
+            'Manhã': document.createDocumentFragment(),
+            'Almoço': document.createDocumentFragment(),
+            'Jantar': document.createDocumentFragment(),
+            'Lanche': document.createDocumentFragment()
+        };
+
         itensDoDia.forEach(item => {
             const tipo = grupos[item.refeicao] ? item.refeicao : 'Lanche';
             grupos[tipo].total += item.pontos;
             totalDia += item.pontos;
+            
             const li = document.createElement('li');
             li.className = 'meal-item';
             li.innerHTML = `<div><strong>${item.nome}</strong><small style="color:#666">${item.unidade}</small></div><div style="display:flex; align-items:center"><span style="font-weight:bold; color:#6a1b9a">${item.pontos}</span><button class="btn-delete" onclick="removerItem(${item.id})">×</button></div>`;
-            grupos[tipo].el.appendChild(li);
+            fragments[tipo].appendChild(li);
         });
-        for (let key in grupos) grupos[key].tel.innerText = grupos[key].total + ' pts';
+
+        for (let key in grupos) {
+            grupos[key].el.appendChild(fragments[key]);
+            grupos[key].tel.innerText = grupos[key].total + ' pts';
+        }
+
         const restante = metaAtual - totalDia;
         document.getElementById('totalConsumido').innerText = totalDia;
         document.getElementById('totalRestante').innerText = restante;
@@ -740,6 +785,9 @@
         const metaParaCalculo = metaSalvaStorage || 380;
         const resumo = {};
         historico.forEach(i => { resumo[i.data] = (resumo[i.data] || 0) + i.pontos; });
+        
+        // OTIMIZAÇÃO: Fragment
+        const fragment = document.createDocumentFragment();
         Object.keys(resumo).sort().reverse().forEach(d => {
             if(d === dataSelecionada) return; 
             const p = d.split('-');
@@ -751,23 +799,27 @@
             li.className = 'history-item';
             li.innerHTML = `<div>${p[2]}/${p[1]}/${p[0]}</div><div class="history-pts ${statusClass}"><span>${icon}</span> ${total} pts</div>`;
             li.onclick = () => { inputData.value = d; mudarData(d); window.scrollTo(0,0); };
-            listaEl.appendChild(li);
+            fragment.appendChild(li);
         });
+        listaEl.appendChild(fragment);
     }
 
     searchInput.addEventListener('input', (e) => {
         const t = e.target.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         if (t.length < 2) { resultsList.style.display = 'none'; return; }
         const res = tabelaAlimentos.filter(i => i.busca.includes(t)).slice(0, 100);
+        
         resultsList.innerHTML = '';
+        const fragment = document.createDocumentFragment();
         res.forEach(item => {
             const li = document.createElement('li');
             const catClass = item.isRecipe ? 'search-cat-label is-recipe' : 'search-cat-label';
             const catName = item.isRecipe ? '★ MEUS PRATOS' : (item.cat || 'Geral');
             li.innerHTML = `<div><span class="${catClass}">${catName}</span><br><b>${item.nome}</b><br><small>${item.unidade}</small></div><span class="pts">${item.pontos}</span>`;
             li.onclick = () => abrirModalRefeicao(item);
-            resultsList.appendChild(li);
+            fragment.appendChild(li);
         });
+        resultsList.appendChild(fragment);
         resultsList.style.display = res.length ? 'block' : 'none';
     });
 
