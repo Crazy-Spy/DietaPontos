@@ -120,7 +120,7 @@
         .total-dia-card { background: var(--primary); color: white; padding: 15px; border-radius: 12px; margin-top: 20px; text-align: center; box-shadow: 0 4px 15px rgba(106, 27, 154, 0.3); }
         .total-dia-val { font-size: 2em; font-weight: bold; }
         
-        /* Estilos do Histórico e Listas */
+        /* Estilos do Histórico */
         .history-section { margin-top: 40px; border-top: 2px solid #eee; padding-top: 20px; }
         .history-item, .recipe-list-item { background: white; margin-bottom: 10px; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #eee; cursor: pointer; transition: transform 0.1s; }
         .history-item:active, .recipe-list-item:active { transform: scale(0.98); background: #f9f9f9; }
@@ -149,6 +149,32 @@
         .recipe-manage-actions { display: flex; gap: 10px; }
         .btn-action-small { background: none; border: 1px solid #ddd; border-radius: 4px; padding: 5px 8px; cursor: pointer; font-size: 1em; }
         .btn-action-small:hover { background: #eee; }
+
+        /* TOAST NOTIFICATION (NOVO) */
+        #toast {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 5px;
+            padding: 16px;
+            position: fixed;
+            z-index: 3000;
+            left: 50%;
+            bottom: 30px;
+            transform: translateX(-50%);
+            font-size: 1rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            opacity: 0;
+            transition: opacity 0.5s, bottom 0.5s;
+        }
+
+        #toast.show {
+            visibility: visible;
+            opacity: 1;
+            bottom: 50px; /* Efeito de subir */
+        }
 
     </style>
 </head>
@@ -222,6 +248,8 @@
         <ul style="list-style:none; padding:0" id="historicoGeralLista"></ul>
     </div>
 </div>
+
+<div id="toast">Mensagem aqui...</div>
 
 <div class="modal-overlay" id="mealModal">
     <div class="modal-content">
@@ -313,8 +341,8 @@
     const META_PADRAO = parseInt(localStorage.getItem(PREF_META_KEY)) || 380;
     
     // CACHE PARA PERFORMANCE
-    let cacheDadosJSON = null; // Guarda o JSON puro para não baixar de novo
-    let tabelaAlimentos = [];  // Lista misturada (JSON + Receitas) usada na busca
+    let cacheDadosJSON = null; 
+    let tabelaAlimentos = [];  
     
     let itemSelecionadoTemp = null;
     let metaAtual = META_PADRAO;
@@ -333,6 +361,14 @@
     const searchInput = document.getElementById('searchInput');
     const resultsList = document.getElementById('resultsList');
     const inputData = document.getElementById('inputData');
+
+    // --- FUNÇÃO TOAST (Substitui Alert) ---
+    function mostrarToast(mensagem) {
+        const x = document.getElementById("toast");
+        x.innerText = mensagem;
+        x.className = "show";
+        setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
+    }
 
     window.onload = async () => {
         inputData.value = dataSelecionada;
@@ -377,7 +413,7 @@
             
             // Fetch com cache buster
             const res = await fetch('tabela_pontos.json?v=' + Date.now());
-            cacheDadosJSON = await res.json(); // Salva na variavel global
+            cacheDadosJSON = await res.json(); 
             
             // Constrói a tabela de busca
             reconstruirIndicePesquisa();
@@ -385,16 +421,14 @@
             document.getElementById('loadingMsg').style.display = 'none';
         } catch (e) {
             console.warn(e);
-            document.getElementById('loadingMsg').innerText = "Erro ao carregar dados!";
+            mostrarToast("Erro ao carregar dados!");
         }
     }
 
     // 2. Mistura (JSON Cacheado) + (Receitas do Storage)
-    // Essa função é RÁPIDA (síncrona), não baixa nada da rede.
     function reconstruirIndicePesquisa() {
         tabelaAlimentos = [];
         
-        // Parte A: Dados do JSON (se já baixou)
         if (cacheDadosJSON) {
             cacheDadosJSON.forEach(cat => {
                 if (cat.itens) {
@@ -411,7 +445,6 @@
             });
         }
 
-        // Parte B: Receitas do Usuário
         const receitasSalvas = JSON.parse(localStorage.getItem(STORAGE_RECIPES_KEY) || '[]');
         receitasSalvas.forEach(receita => {
             const itemReceita = {
@@ -525,7 +558,6 @@
         if(receitas.length === 0) {
             lista.innerHTML = '<li style="text-align:center; color:#999; padding:20px;">Nenhuma receita criada.</li>';
         } else {
-            // OTIMIZAÇÃO: Usar Fragment para evitar reflows no loop
             const fragment = document.createDocumentFragment();
             receitas.forEach(rec => {
                 const li = document.createElement('li');
@@ -553,9 +585,9 @@
         receitas = receitas.filter(r => r.id !== id);
         localStorage.setItem(STORAGE_RECIPES_KEY, JSON.stringify(receitas));
         
-        // OTIMIZAÇÃO: Não baixa JSON de novo
         reconstruirIndicePesquisa(); 
         abrirGerenciadorReceitas();
+        mostrarToast("Receita apagada.");
     }
 
     function editarReceita(id) {
@@ -636,7 +668,6 @@
             lista.innerHTML = '<li style="padding:10px; text-align:center; color:#999; font-size:0.9em;">Nenhum ingrediente ainda</li>';
         }
 
-        // OTIMIZAÇÃO: Fragment
         const fragment = document.createDocumentFragment();
         ingredientesEmEdicao.forEach((ing, index) => {
             const ptsIngrediente = Math.round((ing.qtd / ing.fatorBase) * ing.pontosBase);
@@ -679,8 +710,8 @@
         const nome = document.getElementById('recipeName').value.trim();
         const total = parseInt(document.getElementById('recipeTotalPoints').innerText);
         
-        if (!nome) { alert("Dê um nome para o prato!"); return; }
-        if (ingredientesEmEdicao.length === 0) { alert("Adicione ingredientes!"); return; }
+        if (!nome) { mostrarToast("Dê um nome para o prato!"); return; }
+        if (ingredientesEmEdicao.length === 0) { mostrarToast("Adicione ingredientes!"); return; }
 
         let receitas = JSON.parse(localStorage.getItem(STORAGE_RECIPES_KEY) || '[]');
 
@@ -703,12 +734,10 @@
 
         localStorage.setItem(STORAGE_RECIPES_KEY, JSON.stringify(receitas));
         
-        // OTIMIZAÇÃO: AQUI ESTAVA O PROBLEMA.
-        // Agora chamamos apenas a reconstrução em memória, não o fetch.
         reconstruirIndicePesquisa(); 
         
         fecharModal('recipeModal');
-        alert(`Prato "${nome}" salvo com sucesso!`);
+        mostrarToast(`Prato "${nome}" salvo com sucesso!`);
     }
 
     function apagarReceitaCriada() {
@@ -724,10 +753,9 @@
             searchInput.value = '';
             resultsList.style.display = 'none';
             
-            // OTIMIZAÇÃO: Sem fetch
             reconstruirIndicePesquisa();
             
-            alert("Prato apagado!");
+            mostrarToast("Prato apagado!");
         }
     }
 
@@ -740,7 +768,6 @@
         for (let key in grupos) grupos[key].el.innerHTML = '';
         let totalDia = 0;
         
-        // OTIMIZAÇÃO: Fragment
         const fragments = {
             'Manhã': document.createDocumentFragment(),
             'Almoço': document.createDocumentFragment(),
@@ -786,7 +813,6 @@
         const resumo = {};
         historico.forEach(i => { resumo[i.data] = (resumo[i.data] || 0) + i.pontos; });
         
-        // OTIMIZAÇÃO: Fragment
         const fragment = document.createDocumentFragment();
         Object.keys(resumo).sort().reverse().forEach(d => {
             if(d === dataSelecionada) return; 
@@ -865,7 +891,7 @@
 
     function executarGeracaoMultiplasSemanas() {
         const startVal = document.getElementById('pdfStartDate').value;
-        if(!startVal) { alert("Selecione uma data!"); return; }
+        if(!startVal) { mostrarToast("Selecione uma data!"); return; }
         const ultimaDataString = obterUltimaDataRegistrada();
         const partesUltima = (ultimaDataString || startVal).split('-');
         const ultimaData = new Date(parseInt(partesUltima[0]), parseInt(partesUltima[1])-1, parseInt(partesUltima[2]), 12, 0, 0);
