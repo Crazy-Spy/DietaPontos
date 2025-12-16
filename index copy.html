@@ -11,7 +11,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 
     <style>
-        :root { --primary: #6a1b9a; --bg: #f4f4f9; --white: #ffffff; --text: #333; --gray: #888; --success: #4caf50; --danger: #f44336; }
+        :root { --primary: #6a1b9a; --bg: #f4f4f9; --white: #ffffff; --text: #333; --gray: #888; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg); margin: 0; padding: 20px; color: var(--text); padding-bottom: 80px; }
         .container { max-width: 600px; margin: 0 auto; }
         
@@ -39,9 +39,9 @@
         /* Progresso */
         .progress-wrapper { margin-top: 15px; }
         .progress-container { width: 100%; background-color: #e0e0e0; border-radius: 20px; height: 12px; overflow: hidden; }
-        .progress-bar { height: 100%; background-color: var(--success); width: 0%; transition: width 0.5s ease-in-out; }
+        .progress-bar { height: 100%; background-color: #4caf50; width: 0%; transition: width 0.5s ease-in-out; }
         .progress-bar.warning { background-color: #ff9800; }
-        .progress-bar.danger { background-color: var(--danger); }
+        .progress-bar.danger { background-color: #f44336; }
         .status-text { text-align: center; font-size: 0.85em; margin-top: 5px; color: var(--gray); }
 
         /* Busca */
@@ -80,6 +80,7 @@
         .btn-meal { padding: 12px; border: 2px solid #ddd; background: white; border-radius: 8px; font-weight: bold; color: #555; cursor: pointer; transition: 0.2s; }
         .btn-meal:hover { border-color: var(--primary); color: var(--primary); background: #f3e5f5; }
         
+        /* Botão genérico para ações nos modais */
         .btn-action-primary {
             background-color: var(--primary);
             color: white;
@@ -98,16 +99,9 @@
         .total-dia-card { background: var(--primary); color: white; padding: 15px; border-radius: 12px; margin-top: 20px; text-align: center; box-shadow: 0 4px 15px rgba(106, 27, 154, 0.3); }
         .total-dia-val { font-size: 2em; font-weight: bold; }
         
-        /* Estilos do Histórico */
         .history-section { margin-top: 40px; border-top: 2px solid #eee; padding-top: 20px; }
-        .history-item { background: white; margin-bottom: 10px; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #eee; cursor: pointer; transition: transform 0.1s; }
-        .history-item:active { transform: scale(0.98); background: #f9f9f9; }
-        
-        .history-pts { font-weight: bold; color: var(--primary); background: #f3e5f5; padding: 5px 12px; border-radius: 20px; font-size: 0.9em; display: flex; align-items: center; gap: 6px; }
-        
-        /* Classes de Status no Histórico */
-        .history-pts.status-success { background-color: var(--success); color: white; }
-        .history-pts.status-fail { background-color: var(--danger); color: white; }
+        .history-item { background: white; margin-bottom: 10px; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #eee; cursor: pointer; }
+        .history-pts { font-weight: bold; color: var(--primary); background: #f3e5f5; padding: 5px 10px; border-radius: 20px; font-size: 0.9em; }
 
     </style>
 </head>
@@ -206,6 +200,7 @@
         
         <div style="text-align:left; margin-bottom:15px;">
             <label style="font-weight:bold; color:#444; font-size:0.9em;">Data Inicial (Segunda-feira):</label>
+            
             <input type="date" id="pdfStartDate" class="date-input" 
                    style="width:100%; box-sizing:border-box; margin-top:5px;"
                    onchange="atualizarTextoDataPDF()">
@@ -270,7 +265,6 @@
         metaAtual = parseInt(val) || 380;
         localStorage.setItem(PREF_META_KEY, metaAtual);
         renderizarDiario();
-        renderizarHistoricoGeral(); // Atualiza histórico para refletir nova meta (cor muda na hora)
     }
 
     async function carregarTabelaJSON() {
@@ -424,10 +418,7 @@
         const bar = document.getElementById('progressBar');
         bar.style.width = `${pct}%`;
         bar.className = 'progress-bar';
-        
-        bar.classList.remove('warning', 'danger');
-        
-        if(pct > 80 && pct < 100) bar.classList.add('warning');
+        if(pct > 80) bar.classList.add('warning');
         if(pct >= 100) bar.classList.add('danger');
     }
 
@@ -435,50 +426,37 @@
         const historico = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
         const listaEl = document.getElementById('historicoGeralLista');
         listaEl.innerHTML = '';
-        
-        // Pega a meta salva no storage (ou usa 380 só se não tiver NADA salvo ainda)
-        const metaSalva = parseInt(localStorage.getItem(PREF_META_KEY));
-        const metaParaCalculo = metaSalva ? metaSalva : 380;
-
         const resumo = {};
         historico.forEach(i => { resumo[i.data] = (resumo[i.data] || 0) + i.pontos; });
         
         Object.keys(resumo).sort().reverse().forEach(d => {
-            if(d === dataSelecionada) return; 
+            if(d === dataSelecionada) return;
             const p = d.split('-');
-            
-            const total = resumo[d];
-            // Agora usa a variável que veio direto do storage
-            const sucesso = total <= metaParaCalculo;
-            
-            const statusClass = sucesso ? 'status-success' : 'status-fail';
-            const icon = sucesso ? '✅' : '❌';
-
             const li = document.createElement('li');
             li.className = 'history-item';
-            li.innerHTML = `
-                <div>${p[2]}/${p[1]}/${p[0]}</div>
-                <div class="history-pts ${statusClass}">
-                    <span>${icon}</span> ${total} pts
-                </div>
-            `;
+            li.innerHTML = `<div>${p[2]}/${p[1]}/${p[0]}</div><div class="history-pts">${resumo[d]} pts</div>`;
             li.onclick = () => { inputData.value = d; mudarData(d); window.scrollTo(0,0); };
             listaEl.appendChild(li);
         });
     }
 
-    // --- FUNÇÕES DO PDF ---
+    // --- LÓGICA DE PDF CORRIGIDA ---
 
     function abrirModalPDF() {
-        const partes = dataSelecionada.split('-'); 
-        // Cria data ao meio-dia para evitar bug de fuso
+        // Pega a data que está na tela principal (inputData)
+        // Cria objeto Date setando meio-dia (12:00) pra evitar bug de fuso horário voltando dia
+        const partes = dataSelecionada.split('-'); // YYYY, MM, DD
+        // Mês no JS começa em 0
         const dataRef = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]), 12, 0, 0);
 
-        const diaSemana = dataRef.getDay(); 
+        const diaSemana = dataRef.getDay(); // 0(Dom) a 6(Sab)
+        // Quantos dias voltar pra chegar na segunda (1)?
+        // Se for dom(0) volta 6. Se for seg(1) volta 0. Se for ter(2) volta 1...
         const diasVoltar = (diaSemana === 0) ? 6 : (diaSemana - 1);
         
         dataRef.setDate(dataRef.getDate() - diasVoltar);
         
+        // Formata para YYYY-MM-DD para o input value
         const y = dataRef.getFullYear();
         const m = String(dataRef.getMonth() + 1).padStart(2, '0');
         const d = String(dataRef.getDate()).padStart(2, '0');
@@ -486,7 +464,7 @@
         const inputPDF = document.getElementById('pdfStartDate');
         inputPDF.value = `${y}-${m}-${d}`;
         
-        atualizarTextoDataPDF();
+        atualizarTextoDataPDF(); // Atualiza o texto amigável
         document.getElementById('pdfModal').style.display = 'flex';
     }
 
@@ -495,10 +473,14 @@
         if(!val) return;
         
         const p = val.split('-');
+        // Força a interpretação correta criando data ao meio-dia
         const d = new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2]), 12, 0, 0);
         
         const opcoes = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' };
+        // Exibe: "Segunda-feira, 08/12/2025"
         const texto = d.toLocaleDateString('pt-BR', opcoes);
+        
+        // Coloca primeira letra maiúscula
         const textoFormatado = texto.charAt(0).toUpperCase() + texto.slice(1);
         
         document.getElementById('pdfDatePreview').innerText = "Selecionado: " + textoFormatado;
@@ -516,6 +498,7 @@
         if(!startVal) { alert("Selecione uma data!"); return; }
 
         const ultimaDataString = obterUltimaDataRegistrada();
+        // Cria as datas usando o truque do meio-dia para garantir iteração segura
         const partesUltima = (ultimaDataString || startVal).split('-');
         const ultimaData = new Date(parseInt(partesUltima[0]), parseInt(partesUltima[1])-1, parseInt(partesUltima[2]), 12, 0, 0);
 
@@ -528,11 +511,13 @@
         
         let paginaCount = 0;
 
+        // Loop enquanto cursor <= ultimaData
         while (cursorData <= ultimaData) {
             if (paginaCount > 0) doc.addPage();
             
             gerarPaginaSemana(doc, cursorData, historicoCompleto);
             
+            // Avança 7 dias
             cursorData.setDate(cursorData.getDate() + 7);
             paginaCount++;
         }
@@ -546,21 +531,26 @@
         const headerColunas = ["Refeição / Dia"];
         const totaisRefeicoes = { 'Manhã': [], 'Almoço': [], 'Jantar': [], 'Lanche': [], 'TotalDia': [] };
 
+        // Clona data para não alterar o cursor principal
         const dataLoop = new Date(dataInicioSemana);
         const dataFinalLabel = new Date(dataInicioSemana);
         dataFinalLabel.setDate(dataFinalLabel.getDate() + 6);
         
+        // Loop dos 7 dias
         for (let i = 0; i < 7; i++) {
+            // Garante YYYY-MM-DD local
             const anoStr = dataLoop.getFullYear();
             const mesStr = String(dataLoop.getMonth() + 1).padStart(2, '0');
             const diaStr = String(dataLoop.getDate()).padStart(2, '0');
             const dataKey = `${anoStr}-${mesStr}-${diaStr}`;
             
+            // Dia da semana (ajuste para array 0=Segunda)
             let diaSemanaIndex = dataLoop.getDay() - 1; 
             if (diaSemanaIndex < 0) diaSemanaIndex = 6;
             
             headerColunas.push(`${diasNomes[diaSemanaIndex]}\n${diaStr}/${mesStr}`);
 
+            // Filtra e soma
             const itensDoDia = dados.filter(x => x.data === dataKey);
             const m = itensDoDia.filter(x => x.refeicao === 'Manhã').reduce((a, b) => a + b.pontos, 0);
             const a = itensDoDia.filter(x => x.refeicao === 'Almoço').reduce((a, b) => a + b.pontos, 0);
@@ -573,9 +563,11 @@
             totaisRefeicoes['Lanche'].push(l);
             totaisRefeicoes['TotalDia'].push(m + a + j + l);
             
+            // Avança 1 dia
             dataLoop.setDate(dataLoop.getDate() + 1);
         }
 
+        // Cabeçalho PDF
         doc.setFontSize(14);
         doc.text("Drª Janine Malucelli Favorito - Endocrinologista / CRM 12449", 14, 15);
         doc.setFontSize(22);
@@ -587,6 +579,7 @@
         doc.setFont("helvetica", "normal");
         doc.text(`Semana: ${formatar(dataInicioSemana)} a ${formatar(dataFinalLabel)}`, 14, 32);
 
+        // Tabela
         const bodyData = [
             [{ content: "Manhã", styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, "", "", "", "", "", "", ""], 
             [{ content: "Total Manhã", styles: { fontStyle: 'bold' } }, ...totaisRefeicoes['Manhã']],
