@@ -782,7 +782,16 @@
             
             const li = document.createElement('li');
             li.className = 'meal-item';
-            li.innerHTML = `<div><strong>${item.nome}</strong><small style="color:#666">${item.unidade}</small></div><div style="display:flex; align-items:center"><span style="font-weight:bold; color:#6a1b9a">${item.pontos}</span><button class="btn-delete" onclick="removerItem(${item.id})">×</button></div>`;
+            li.innerHTML = `
+                <div onclick="abrirEdicaoEntrada(${item.id})" style="cursor:pointer; flex-grow:1;">
+                    <strong>${item.nome}</strong>
+                    <small style="color:#666">${item.unidade}</small>
+                </div>
+                <div style="display:flex; align-items:center">
+                    <span style="font-weight:bold; color:#6a1b9a">${item.pontos}</span>
+                    <button class="btn-delete" onclick="removerItem(${item.id})">×</button>
+                </div>
+            `;
             fragments[tipo].appendChild(li);
         });
 
