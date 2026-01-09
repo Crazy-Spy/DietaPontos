@@ -516,27 +516,37 @@
         const qtdInserida = parseFloat(document.getElementById('inputQtd').value) || fatorBase;
         const pontosFinais = Math.round((qtdInserida / fatorBase) * pontosBase);
 
-        const historico = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        let historico = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
         let sufixoUnidade = itemSelecionadoTemp.unidade.replace(/^[\d\/]+\s*/, '');
         if(sufixoUnidade === itemSelecionadoTemp.unidade) sufixoUnidade = ""; 
 
-        const novoRegistro = {
-            id: Date.now(),
-            data: dataSelecionada,
-            nome: itemSelecionadoTemp.nome,
-            pontos: pontosFinais,
-            unidade: `${qtdInserida} ${sufixoUnidade} (calc)`,
-            refeicao: tipoRefeicao
-        };
+        if (itemSelecionadoTemp.idEdicao) {
+            // MODO EDIÇÃO: Localiza e atualiza o item
+            const index = historico.findIndex(i => i.id === itemSelecionadoTemp.idEdicao);
+            if (index !== -1) {
+                historico[index].pontos = pontosFinais;
+                historico[index].unidade = `${qtdInserida} ${sufixoUnidade} (calc)`;
+                historico[index].refeicao = tipoRefeicao;
+                historico[index].data = dataSelecionada; // Caso você mude a data na edição
+            }
+        } else {
+            // MODO INSERÇÃO: Cria novo
+            const novoRegistro = {
+                id: Date.now(),
+                data: dataSelecionada,
+                nome: itemSelecionadoTemp.nome,
+                pontos: pontosFinais,
+                unidade: `${qtdInserida} ${sufixoUnidade} (calc)`,
+                refeicao: tipoRefeicao
+            };
+            historico.push(novoRegistro);
+        }
 
-        historico.push(novoRegistro);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(historico));
-        
         fecharModal('mealModal');
-        searchInput.value = '';
-        resultsList.style.display = 'none';
         renderizarDiario();
         renderizarHistoricoGeral();
+        mostrarToast(itemSelecionadoTemp.idEdicao ? "Atualizado!" : "Adicionado!");
     }
 
     function removerItem(id) {
@@ -812,6 +822,45 @@
         if(pct > 80 && pct < 100) bar.classList.add('warning');
         if(pct >= 100) bar.classList.add('danger');
     }
+
+    function abrirEdicaoEntrada(id) {
+    const historico = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    const itemEntrada = historico.find(i => i.id === id);
+    if (!itemEntrada) return;
+
+    // Procura o item original na tabela para pegar os pontos base
+    const itemOriginal = tabelaAlimentos.find(a => a.nome === itemEntrada.nome);
+    
+    // Se não achar o original (ex: item deletado da tabela), usamos os dados da entrada
+    itemSelecionadoTemp = itemOriginal || { 
+        nome: itemEntrada.nome, 
+        pontos: itemEntrada.pontos, 
+        unidade: itemEntrada.unidade,
+        isRecipe: false 
+    };
+
+    // Variáveis globais para o cálculo do modal
+    pontosBase = itemOriginal ? itemOriginal.pontos : itemEntrada.pontos;
+    fatorBase = extrairQuantidadeBase(itemOriginal ? itemOriginal.unidade : itemEntrada.unidade);
+    
+    // Extrai a quantidade numérica que foi salva (ex: "2 colheres" -> 2)
+    const qtdSalva = parseFloat(itemEntrada.unidade) || fatorBase;
+
+    document.getElementById('modalTitle').innerText = "Editar: " + itemEntrada.nome;
+    document.getElementById('modalUnitDesc').innerText = `Base: ${itemSelecionadoTemp.unidade} = ${pontosBase} pts`;
+    
+    const inputQtd = document.getElementById('inputQtd');
+    inputQtd.value = qtdSalva;
+    
+    // Marcar que estamos EDITANDO (guardamos o ID da entrada)
+    itemSelecionadoTemp.idEdicao = id;
+    itemSelecionadoTemp.refeicaoOriginal = itemEntrada.refeicao;
+
+    recalcularPontos();
+    document.getElementById('mealModal').style.display = 'flex';
+}
+
+
 
     function renderizarHistoricoGeral() {
         const historico = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
