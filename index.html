@@ -339,26 +339,37 @@
 <div class="modal-overlay" id="manualModal">
     <div class="modal-content">
         <h3 class="modal-title">Entrada Manual</h3>
-        <p style="font-size:0.8em; color:#666; margin-bottom:15px;">Lançamento direto ou por calorias</p>
+        <p style="font-size:0.8em; color:#666; margin-bottom:15px;">Calcule pontos por porção</p>
         
         <div class="recipe-creator-box">
-            <label style="font-size:0.9em; font-weight:bold;">Nome (opcional):</label>
-            <input type="text" id="manualNome" class="recipe-input" placeholder="Ex: Doce de Leite Caseiro">
+            <label style="font-size:0.9em; font-weight:bold;">Nome do Alimento:</label>
+            <input type="text" id="manualNome" class="recipe-input" placeholder="Ex: Chocolate Importado">
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <div>
-                    <label style="font-size:0.8em; font-weight:bold;">Calorias (kcal):</label>
-                    <input type="number" id="manualKcal" class="recipe-input" placeholder="0" oninput="converterKcalParaPontos(this.value)">
+                    <label style="font-size:0.8em; font-weight:bold;">Kcal (por unid):</label>
+                    <input type="number" id="manualKcal" class="recipe-input" placeholder="0" oninput="recalcularManual()">
                 </div>
                 <div>
-                    <label style="font-size:0.8em; font-weight:bold;">Pontos:</label>
-                    <input type="number" id="manualPontos" class="recipe-input" placeholder="0" oninput="document.getElementById('manualKcal').value = ''">
+                    <label style="font-size:0.8em; font-weight:bold;">Qtd Comida:</label>
+                    <input type="number" id="manualQtd" class="recipe-input" value="1" step="0.1" oninput="recalcularManual()">
                 </div>
             </div>
 
-            <div style="text-align: left; margin: 10px 0;">
+            <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 10px; align-items: end;">
+                <div>
+                    <label style="font-size:0.8em; font-weight:bold;">Unidade (ex: g, ml):</label>
+                    <input type="text" id="manualUnidade" class="recipe-input" placeholder="unidade">
+                </div>
+                <div style="margin-bottom: 10px; text-align: right;">
+                    <span style="font-size: 0.8em; color: var(--primary); font-weight: bold;">TOTAL: </span>
+                    <span id="manualPontosDisplay" style="font-weight: bold; color: var(--primary);">0</span><span style="font-size: 0.8em; color: var(--primary);"> pts</span>
+                </div>
+            </div>
+
+            <div style="text-align: left; margin: 5px 0 10px 0;">
                 <input type="checkbox" id="checkSalvarAlimento"> 
-                <label for="checkSalvarAlimento" style="font-size:0.85em;">Salvar este alimento na tabela</label>
+                <label for="checkSalvarAlimento" style="font-size:0.85em;">Salvar na minha tabela</label>
             </div>
         </div>
 
@@ -1074,7 +1085,9 @@
     function abrirModalManual() {
         document.getElementById('manualNome').value = '';
         document.getElementById('manualKcal').value = '';
-        document.getElementById('manualPontos').value = '';
+        document.getElementById('manualQtd').value = '1';
+        document.getElementById('manualUnidade').value = 'unidade';
+        document.getElementById('manualPontosDisplay').innerText = '0';
         document.getElementById('checkSalvarAlimento').checked = false;
         document.getElementById('manualModal').style.display = 'flex';
     }
@@ -1089,43 +1102,52 @@
         document.getElementById('manualPontos').value = pts;
     }
 
+    function recalcularManual() {
+        const kcal = parseFloat(document.getElementById('manualKcal').value) || 0;
+        const qtd = parseFloat(document.getElementById('manualQtd').value) || 0;
+        
+        // Cálculo: (Caloria por unidade * Quantidade) / 3.6
+        const pontosTotais = Math.round((kcal * qtd) / CONVERSAO_KCAL);
+        
+        document.getElementById('manualPontosDisplay').innerText = pontosTotais;
+    }
+
     function confirmarManual(tipoRefeicao) {
         const nome = document.getElementById('manualNome').value.trim() || "Item Manual";
-        const pontos = parseInt(document.getElementById('manualPontos').value) || 0;
+        const kcal = parseFloat(document.getElementById('manualKcal').value) || 0;
+        const qtd = parseFloat(document.getElementById('manualQtd').value) || 0;
+        const unidade = document.getElementById('manualUnidade').value.trim() || "un";
+        const pontos = parseInt(document.getElementById('manualPontosDisplay').innerText);
         const salvar = document.getElementById('checkSalvarAlimento').checked;
 
-        if (pontos <= 0 && !salvar) {
-            mostrarToast("Informe os pontos ou calorias!");
+        if (kcal <= 0) {
+            mostrarToast("Informe as calorias!");
             return;
         }
 
-        // Alteração 3: Salvar alimento que não existe na tabela
+        // Salvar como alimento fixo (Meus Pratos) se o checkbox estiver marcado
         if (salvar) {
-            if (nome === "Item Manual") {
-                mostrarToast("Dê um nome para salvar o alimento!");
-                return;
-            }
-            
             let receitas = JSON.parse(localStorage.getItem(STORAGE_RECIPES_KEY) || '[]');
             const novoAlimento = {
                 id: Date.now(),
                 nome: nome,
-                totalPontos: pontos,
-                itens: [{ nome: "Cadastro Manual", qtd: 1, pontosBase: pontos, fatorBase: 1 }]
+                totalPontos: Math.round(kcal / CONVERSAO_KCAL), // Salva o ponto da unidade base
+                unidade: `1 ${unidade}`,
+                itens: [{ nome: "Cadastro Manual", qtd: 1, pontosBase: Math.round(kcal / CONVERSAO_KCAL), fatorBase: 1 }]
             };
             receitas.push(novoAlimento);
             localStorage.setItem(STORAGE_RECIPES_KEY, JSON.stringify(receitas));
-            reconstruirIndicePesquisa();
+            reconstruirIndicePesquisa(); 
         }
 
-        // Lançamento no diário
-        const historico = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        // Registrar no diário alimentar
+        const historico = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); 
         const novoRegistro = {
             id: Date.now() + 1,
-            data: dataSelecionada,
+            data: dataSelecionada, 
             nome: nome,
             pontos: pontos,
-            unidade: "1 un (manual)",
+            unidade: `${qtd} ${unidade} (manual)`,
             refeicao: tipoRefeicao
         };
         
@@ -1133,9 +1155,9 @@
         localStorage.setItem(STORAGE_KEY, JSON.stringify(historico));
         
         fecharModal('manualModal');
-        renderizarDiario();
-        renderizarHistoricoGeral();
-        mostrarToast(salvar ? "Salvo e Lançado!" : "Lançado com sucesso!");
+        renderizarDiario(); 
+        renderizarHistoricoGeral(); 
+        mostrarToast("Lançamento realizado!");
     }
 </script>
 </body>
