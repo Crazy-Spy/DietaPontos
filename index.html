@@ -191,6 +191,9 @@
                 <button class="btn-icon btn-create-recipe" onclick="abrirCriadorReceita()" title="Criar Novo Prato">
                     <span>➕</span> Prato
                 </button>
+                <button class="btn-icon" style="background-color: #0288d1;" onclick="abrirModalManual()" title="Lançamento Manual">
+                    <span>📝</span> Manual
+                </button>
                 <button class="btn-icon btn-manage-recipes" onclick="abrirGerenciadorReceitas()" title="Minhas Receitas">
                     <span>📖</span>
                 </button>
@@ -330,6 +333,43 @@
         </div>
         
         <button class="btn-cancel" onclick="fecharModal('manageRecipesModal')">Fechar</button>
+    </div>
+</div>
+
+<div class="modal-overlay" id="manualModal">
+    <div class="modal-content">
+        <h3 class="modal-title">Entrada Manual</h3>
+        <p style="font-size:0.8em; color:#666; margin-bottom:15px;">Lançamento direto ou por calorias</p>
+        
+        <div class="recipe-creator-box">
+            <label style="font-size:0.9em; font-weight:bold;">Nome (opcional):</label>
+            <input type="text" id="manualNome" class="recipe-input" placeholder="Ex: Doce de Leite Caseiro">
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div>
+                    <label style="font-size:0.8em; font-weight:bold;">Calorias (kcal):</label>
+                    <input type="number" id="manualKcal" class="recipe-input" placeholder="0" oninput="converterKcalParaPontos(this.value)">
+                </div>
+                <div>
+                    <label style="font-size:0.8em; font-weight:bold;">Pontos:</label>
+                    <input type="number" id="manualPontos" class="recipe-input" placeholder="0" oninput="document.getElementById('manualKcal').value = ''">
+                </div>
+            </div>
+
+            <div style="text-align: left; margin: 10px 0;">
+                <input type="checkbox" id="checkSalvarAlimento"> 
+                <label for="checkSalvarAlimento" style="font-size:0.85em;">Salvar este alimento na tabela</label>
+            </div>
+        </div>
+
+        <div style="font-size:0.8em; color:#888; margin-bottom:10px;">Onde lançar no diário?</div>
+        <div class="meal-options">
+            <button class="btn-meal" onclick="confirmarManual('Manhã')">☕ Manhã</button>
+            <button class="btn-meal" onclick="confirmarManual('Almoço')">🍽️ Almoço</button>
+            <button class="btn-meal" onclick="confirmarManual('Lanche')">🥪 Lanche</button>
+            <button class="btn-meal" onclick="confirmarManual('Jantar')">🍲 Jantar</button>
+        </div>
+        <button class="btn-cancel" onclick="fecharModal('manualModal')">Cancelar</button>
     </div>
 </div>
 
@@ -1028,6 +1068,74 @@
             bodyStyles: { halign: 'center', valign: 'middle' },
             columnStyles: { 0: { cellWidth: 35, halign: 'left' } }
         });
+    }
+    const CONVERSAO_KCAL = 3.6;
+
+    function abrirModalManual() {
+        document.getElementById('manualNome').value = '';
+        document.getElementById('manualKcal').value = '';
+        document.getElementById('manualPontos').value = '';
+        document.getElementById('checkSalvarAlimento').checked = false;
+        document.getElementById('manualModal').style.display = 'flex';
+    }
+
+    function converterKcalParaPontos(kcal) {
+        if (!kcal) {
+            document.getElementById('manualPontos').value = '';
+            return;
+        }
+        // Alteração 2: 1 ponto por aprox 3.6 kcal
+        const pts = Math.round(parseFloat(kcal) / CONVERSAO_KCAL);
+        document.getElementById('manualPontos').value = pts;
+    }
+
+    function confirmarManual(tipoRefeicao) {
+        const nome = document.getElementById('manualNome').value.trim() || "Item Manual";
+        const pontos = parseInt(document.getElementById('manualPontos').value) || 0;
+        const salvar = document.getElementById('checkSalvarAlimento').checked;
+
+        if (pontos <= 0 && !salvar) {
+            mostrarToast("Informe os pontos ou calorias!");
+            return;
+        }
+
+        // Alteração 3: Salvar alimento que não existe na tabela
+        if (salvar) {
+            if (nome === "Item Manual") {
+                mostrarToast("Dê um nome para salvar o alimento!");
+                return;
+            }
+            
+            let receitas = JSON.parse(localStorage.getItem(STORAGE_RECIPES_KEY) || '[]');
+            const novoAlimento = {
+                id: Date.now(),
+                nome: nome,
+                totalPontos: pontos,
+                itens: [{ nome: "Cadastro Manual", qtd: 1, pontosBase: pontos, fatorBase: 1 }]
+            };
+            receitas.push(novoAlimento);
+            localStorage.setItem(STORAGE_RECIPES_KEY, JSON.stringify(receitas));
+            reconstruirIndicePesquisa();
+        }
+
+        // Lançamento no diário
+        const historico = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        const novoRegistro = {
+            id: Date.now() + 1,
+            data: dataSelecionada,
+            nome: nome,
+            pontos: pontos,
+            unidade: "1 un (manual)",
+            refeicao: tipoRefeicao
+        };
+        
+        historico.push(novoRegistro);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(historico));
+        
+        fecharModal('manualModal');
+        renderizarDiario();
+        renderizarHistoricoGeral();
+        mostrarToast(salvar ? "Salvo e Lançado!" : "Lançado com sucesso!");
     }
 </script>
 </body>
